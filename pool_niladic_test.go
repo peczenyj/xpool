@@ -2,7 +2,9 @@ package xpool_test
 
 import (
 	"bytes"
+	"fmt"
 	"io"
+	"os"
 	"testing"
 	"testing/quick"
 
@@ -55,4 +57,20 @@ func TestXPoolMultipleGets(t *testing.T) {
 	require.NotNil(t, rw2)
 
 	assert.NotSame(t, rw1, rw2)
+}
+
+func ExampleNew() {
+	pool := xpool.New[io.ReadWriter](func() io.ReadWriter {
+		return new(bytes.Buffer)
+	})
+
+	rw := pool.Get()
+	defer pool.Put(rw)
+
+	// your favorite usage of rw
+
+	fmt.Fprint(rw, "example")
+
+	_, _ = io.Copy(os.Stdout, rw)
+	// Output: example
 }
