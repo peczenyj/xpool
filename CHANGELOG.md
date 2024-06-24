@@ -1,4 +1,5 @@
-## What's Changed
+## What's Changed in v0.0.1
+* add initial changelog
 * force to use latest stable go
 * Merge branch 'main' of github.com:peczenyj/xpool
 * Merge pull request #1 from peczenyj/dependabot/github_actions/codecov/codecov-action-4.5.0
