@@ -9,6 +9,7 @@ type Pool[T any] interface {
 	Get() T
 
 	// Put return the object to the pull.
+	// It may reset the object before put it back to sync pool.
 	Put(object T)
 }
 
@@ -18,24 +19,21 @@ type Resetter interface {
 	Reset()
 }
 
-type niladicPool[T any] struct {
-	ctor     func() T
-	pool     *sync.Pool
-	resetter func(T)
-}
-
 // New is the constructor of an xpool.Pool.
 // Receives the constructor of the type T.
 func New[T any](ctor func() T) Pool[T] {
-	return NewWithResetter(ctor, nil)
+	return &simplePool[T]{
+		ctor: ctor,
+		pool: new(sync.Pool),
+	}
 }
 
 // NewWithDefaultResetter is an alternative constructor of an xpool.Pool.
 // We will call the resetter callback before put the object back to the pool.
+// Be careful, the custom resetter must be thread safe.
 func NewWithResetter[T any](ctor func() T, resetter func(T)) Pool[T] {
-	return &niladicPool[T]{
-		ctor:     ctor,
-		pool:     new(sync.Pool),
+	return &resettablePool[T]{
+		pool:     New(ctor),
 		resetter: resetter,
 	}
 }
@@ -50,7 +48,12 @@ func NewWithDefaultResetter[T any](ctor func() T) Pool[T] {
 	})
 }
 
-func (p *niladicPool[T]) Get() T {
+type simplePool[T any] struct {
+	ctor func() T
+	pool *sync.Pool
+}
+
+func (p *simplePool[T]) Get() T {
 	obj, ok := p.pool.Get().(T)
 	if !ok {
 		obj = p.ctor()
@@ -59,10 +62,21 @@ func (p *niladicPool[T]) Get() T {
 	return obj
 }
 
-func (p *niladicPool[T]) Put(obj T) {
-	if p.resetter != nil {
-		p.resetter(obj)
-	}
+func (p *simplePool[T]) Put(obj T) {
+	p.pool.Put(obj)
+}
+
+type resettablePool[T any] struct {
+	pool     Pool[T]
+	resetter func(T)
+}
+
+func (p *resettablePool[T]) Get() T {
+	return p.pool.Get()
+}
+
+func (p *resettablePool[T]) Put(obj T) {
+	p.resetter(obj)
 
 	p.pool.Put(obj)
 }

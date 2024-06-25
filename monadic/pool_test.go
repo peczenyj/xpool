@@ -32,7 +32,7 @@ func TestResetterMonadic(t *testing.T) {
 			label: "monadic NewWithResetter + explicit custom Reset",
 			pool: monadic.NewWithResetter(func() *bytes.Reader {
 				return bytes.NewReader(nil)
-			}, func(b []byte, r *bytes.Reader) {
+			}, func(r *bytes.Reader, b []byte) {
 				r.Reset(b)
 			}),
 		},
@@ -63,7 +63,8 @@ func TestResetterMonadic(t *testing.T) {
 }
 
 func ExampleNew() {
-	pool := monadic.New[[]byte](func() io.Reader {
+	// can't infer type V, must be explicit
+	var pool monadic.Pool[[]byte, io.Reader] = monadic.New[[]byte](func() io.Reader {
 		return bytes.NewReader(nil)
 	})
 
@@ -75,14 +76,16 @@ func ExampleNew() {
 }
 
 func ExampleNewWithResetter() {
+	// can't infer type V, must be explicit
 	poolWriter := monadic.New[io.Writer](func() io.WriteCloser {
 		zw, _ := flate.NewWriter(nil, flate.DefaultCompression)
 		return zw
 	})
 
-	poolReader := monadic.NewWithResetter[io.Reader](func() io.ReadCloser {
+	// can infer type V from resetter
+	poolReader := monadic.NewWithResetter(func() io.ReadCloser {
 		return flate.NewReader(nil)
-	}, func(v io.Reader, t io.ReadCloser) {
+	}, func(t io.ReadCloser, v io.Reader) {
 		if resetter, ok := any(t).(flate.Resetter); ok {
 			_ = resetter.Reset(v, nil)
 		}

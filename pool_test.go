@@ -19,7 +19,8 @@ import (
 func TestXPoolBasicGetPut(t *testing.T) {
 	t.Parallel()
 
-	pool := xpool.New[io.ReadWriter](func() io.ReadWriter {
+	// pool can infer T from constructor
+	pool := xpool.New(func() io.ReadWriter {
 		return new(bytes.Buffer)
 	})
 
@@ -44,7 +45,8 @@ func TestXPoolBasicGetPut(t *testing.T) {
 func TestXPoolMultipleGets(t *testing.T) {
 	t.Parallel()
 
-	pool := xpool.New[io.ReadWriter](func() io.ReadWriter {
+	// pool can infer T from constructor
+	pool := xpool.New(func() io.ReadWriter {
 		return new(bytes.Buffer)
 	})
 
@@ -105,7 +107,8 @@ func TestWithDefaultResetter(t *testing.T) {
 }
 
 func ExampleNew() {
-	pool := xpool.New[io.ReadWriter](func() io.ReadWriter {
+	// pool can infer T from constructor
+	pool := xpool.New(func() io.ReadWriter {
 		return new(bytes.Buffer)
 	})
 
@@ -121,7 +124,9 @@ func ExampleNew() {
 }
 
 func ExampleNewWithDefaultResetter() {
-	pool := xpool.NewWithDefaultResetter(sha256.New)
+	// pool can infer T from constructor
+	var pool xpool.Pool[hash.Hash] = xpool.NewWithDefaultResetter(sha256.New)
+
 	var hasher hash.Hash = pool.Get() // get a new hash.Hash interface
 	defer pool.Put(hasher)            // reset it before put back to sync pool.
 
