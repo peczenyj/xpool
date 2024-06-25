@@ -21,7 +21,7 @@ Inspired by [xpool](https://pkg.go.dev/go.unistack.org/micro/v3/util/xpool)
 
 ## Usage
 
-Imagine you need a pool of [io.ReadWrite](https://pkg.go.dev/io#ReadWriter) interfaces implemented by [bytes.Buffer](https://pkg.go.dev/bytes#Buffer). You don't need to cast from ̀`interface{}` `any`more, just do:
+Imagine you need a pool of [io.ReadWrite](https://pkg.go.dev/io#ReadWriter) interfaces implemented by [bytes.Buffer](https://pkg.go.dev/bytes#Buffer). You don't need to cast from `interface{}` `any`more, just do:
 
 ```go
     pool := xpool.New(func() io.ReadWriter {
