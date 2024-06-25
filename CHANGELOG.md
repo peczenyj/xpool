@@ -1,4 +1,8 @@
-## What's Changed in v0.0.1
+## What's Changed in v0.1.0
+* refactor interfaces, now there is only xpool and xpool/monadic, no more package resetter
+* refactor pools
+* add examples, improve readme
+* bump version to v0.0.1
 * add initial changelog
 * force to use latest stable go
 * Merge branch 'main' of github.com:peczenyj/xpool

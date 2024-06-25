@@ -17,7 +17,7 @@
 
 The xpool is a user-friendly, type-safe version of [sync.Pool](https://pkg.go.dev/sync#Pool).
 
-Inspired by [xpool](go.unistack.org/micro/v3/util/xpool)
+Inspired by [xpool](https://go.unistack.org/micro/v3/util/xpool)
 
 ## Usage
 
@@ -84,13 +84,13 @@ type Resetter[V any] interface {
 }
 ```
 
-Monadic resetters are handling by package [xpool/monadic](https://pkg.go.dev/badge/github.com/peczenyj/xpool/monadic).
+Monadic resetters are handling by package [xpool/monadic](https://pkg.go.dev/github.com/peczenyj/xpool/monadic).
 
 Important: you may not want to expose objects with a `Reset` method, the xpool will not ensure that the type `T` is a `Resetter[V]` unless you define it like this.
 
 ### Examples
 
-Calling `Reset()` before put it back to the pool of objects, on [xpool](https://pkg.go.dev/badge/github.com/peczenyj/xpool) package:
+Calling `Reset()` before put it back to the pool of objects, on [xpool](https://pkg.go.dev/github.com/peczenyj/xpool) package:
 
 ```go
     var pool xpool.Pool[hash.Hash] = xpool.NewWithDefaultResetter(func() hash.Hash {
@@ -105,7 +105,7 @@ Calling `Reset()` before put it back to the pool of objects, on [xpool](https://
     value := hasher.Sum(nil)
 ```
 
-Calling `Reset(v)` with some value when acquire the instance and `Reset( <zero value> )` before put it back to the pool of objects, on [xpool/monadic](https://pkg.go.dev/badge/github.com/peczenyj/xpool/monadic) package:
+Calling `Reset(v)` with some value when acquire the instance and `Reset( <zero value> )` before put it back to the pool of objects, on [xpool/monadic](https://pkg.go.dev/github.com/peczenyj/xpool/monadic) package:
 
 ```go
     // this constructor can't infer type V, so you should be explicit!
@@ -123,7 +123,7 @@ Calling `Reset(v)` with some value when acquire the instance and `Reset( <zero v
 
 It is possible set a custom thread-safe Resetter, instead just call `Reset()` or `Reset(v)`, via a custom resette, instead use the default one.
 
-on [xpool](https://pkg.go.dev/badge/github.com/peczenyj/xpool) package:
+on [xpool](https://pkg.go.dev/github.com/peczenyj/xpool) package:
 
 ```go
     // both calls are equivalent
@@ -135,7 +135,7 @@ on [xpool](https://pkg.go.dev/badge/github.com/peczenyj/xpool) package:
     pool:=  xpool.NewWithDefaultResetter(sha256.New),
 ```
 
-on [xpool/monadic](https://pkg.go.dev/badge/github.com/peczenyj/xpool/monadic) package:
+on [xpool/monadic](https://pkg.go.dev/github.com/peczenyj/xpool/monadic) package:
 
 ```go
     // both calls are equivalent
@@ -187,4 +187,4 @@ Custom resetters can do more than just set the status of the object, they can be
 
 ## Important
 
-On [xpool](https://pkg.go.dev/badge/github.com/peczenyj/xpool) the resetter is optional, while on [xpool/monadic](https://pkg.go.dev/badge/github.com/peczenyj/xpool/monadic) this is mandatory. If you don't want to have resetters on a monadic xpool, please create a regular `xpool.Pool`.
+On [xpool](https://pkg.go.dev/github.com/peczenyj/xpool) the resetter is optional, while on [xpool/monadic](https://pkg.go.dev/github.com/peczenyj/xpool/monadic) this is mandatory. If you don't want to have resetters on a monadic xpool, please create a regular `xpool.Pool`.
