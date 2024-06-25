@@ -17,7 +17,7 @@
 
 The xpool is a user-friendly, type-safe version of [sync.Pool](https://pkg.go.dev/sync#Pool).
 
-Inspired by [xpool](https://go.unistack.org/micro/v3/util/xpool)
+Inspired by [xpool](https://pkg.go.dev/go.unistack.org/micro/v3/util/xpool)
 
 ## Usage
 
