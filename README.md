@@ -1,7 +1,7 @@
 # xpool
 
 [![tag](https://img.shields.io/github/tag/peczenyj/xpool.svg)](https://github.com/peczenyj/xpool/releases)
-![Go Version](https://img.shields.io/badge/Go-%3E%3D%201.21-%23007d9c)
+![Go Version](https://img.shields.io/badge/Go-%3E%3D%201.18-%23007d9c)
 [![GoDoc](https://pkg.go.dev/badge/github.com/peczenyj/xpool)](http://pkg.go.dev/github.com/peczenyj/xpool)
 [![Go](https://github.com/peczenyj/xpool/actions/workflows/go.yml/badge.svg)](https://github.com/peczenyj/xpool/actions/workflows/go.yml)
 [![Lint](https://github.com/peczenyj/xpool/actions/workflows/lint.yml/badge.svg)](https://github.com/peczenyj/xpool/actions/workflows/lint.yml)
