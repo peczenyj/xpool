@@ -1,7 +1,20 @@
+## What's Changed in v0.1.1
+* Merge pull request #2 from peczenyj/change-min-go
+* change minimum go version
+* Update README.md
+
+**Full Changelog**: https://github.com///compare/v0.1.0...v0.1.1
+
 ## What's Changed in v0.1.0
+* fix xpool link
+* bump version
 * refactor interfaces, now there is only xpool and xpool/monadic, no more package resetter
 * refactor pools
 * add examples, improve readme
+
+**Full Changelog**: https://github.com///compare/v0.0.1...v0.1.0
+
+## What's Changed in v0.0.1
 * bump version to v0.0.1
 * add initial changelog
 * force to use latest stable go
