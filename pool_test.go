@@ -7,7 +7,6 @@ import (
 	"hash"
 	"io"
 	"os"
-	"sync/atomic"
 	"testing"
 	"testing/quick"
 
@@ -132,19 +131,18 @@ func TestWithDefaultResetterOnResetCallback(t *testing.T) {
 	t.Run("positive case", func(t *testing.T) {
 		t.Parallel()
 
-		var onResetCalledAtomicPtr atomic.Pointer[bool]
+		var onResetCalledPtr *bool
 
 		pool := xpool.NewWithDefaultResetter(
 			func() any { return sha256.New() },
 			func(called bool) {
-				onResetCalledAtomicPtr.Store(&called)
+				onResetCalledPtr = &called
 			},
 		)
 
 		str := pool.Get()
 		pool.Put(str)
 
-		onResetCalledPtr := onResetCalledAtomicPtr.Load()
 		require.NotNil(t, onResetCalledPtr)
 		assert.True(t, *onResetCalledPtr, "should call reset on a any/hash.Hash")
 	})
