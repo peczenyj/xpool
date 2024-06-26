@@ -5,13 +5,14 @@ import "sync"
 var _ Pool[any] = (*sync.Pool)(nil)
 
 // Pool is a type-safe object pool interface.
+// for convenience, *sync.Pool is a Pool[any]
 type Pool[T any] interface {
 	// Get fetch one item from object pool
 	// If needed, will create another object.
 	Get() T
 
 	// Put return the object to the pull.
-	// It may reset the object bef	// poolWriter onReset callback (called: true, onGet: true)ore put it back to sync pool.
+	// It may reset the object before put it back to sync pool.
 	Put(object T)
 }
 

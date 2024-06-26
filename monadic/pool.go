@@ -15,7 +15,7 @@ type Pool[S, T any] interface {
 	Put(object T)
 }
 
-// Resetter interface.
+// Resetter monadic interface.
 type Resetter[S any] interface {
 	Reset(state S)
 }

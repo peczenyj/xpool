@@ -19,6 +19,26 @@ The xpool is a user-friendly, type-safe version of [sync.Pool](https://pkg.go.de
 
 Inspired by [xpool](https://pkg.go.dev/go.unistack.org/micro/v3/util/xpool)
 
+## Definition
+
+This package defines an interface `Pool[T any]`
+
+```go
+// Pool is a type-safe object pool interface.
+// for convenience, *sync.Pool is a Pool[any]
+type Pool[T any] interface {
+    // Get fetch one item from object pool
+    // If needed, will create another object.
+    Get() T
+
+    // Put return the object to the pull.
+    // It may reset the object before put it back to sync pool.
+    Put(object T)
+}
+```
+
+In such way that `*sync.Pool` is a `Pool[any]`
+
 ## Usage
 
 Imagine you need a pool of [io.ReadWrite](https://pkg.go.dev/io#ReadWriter) interfaces implemented by [bytes.Buffer](https://pkg.go.dev/bytes#Buffer). You don't need to cast from `interface{}` `any`more, just do:
@@ -75,18 +95,18 @@ type Resetter interface {
 }
 ```
 
-And the Monadic interface, where `Reset(V)` receives one single argument (for instance, the `gzip.Writer` case) to be executed when we fetch an object from the pool and initialize with a value of type V, and will be resetted back to a zero value of V before put the object back to the pool.
+And the Monadic interface, where `Reset(S)` receives one single argument (for instance, the `gzip.Writer` case) to be executed when we fetch an object from the pool and initialize with a value of type S, and will be resetted back to a zero value of S before put the object back to the pool.
 
 ```go
 // Resetter interface.
-type Resetter[V any] interface {
-    Reset(value V)
+type Resetter[S any] interface {
+    Reset(state S)
 }
 ```
 
 Monadic resetters are handling by package [xpool/monadic](https://pkg.go.dev/github.com/peczenyj/xpool/monadic).
 
-Important: you may not want to expose objects with a `Reset` method, the xpool will not ensure that the type `T` is a `Resetter[V]` unless you define it like this.
+Important: you may not want to expose objects with a `Reset` method, the xpool will not ensure that the type `T` is a `Resetter[S]` unless you define it like this.
 
 ### Examples
 
@@ -108,7 +128,7 @@ Calling `Reset()` before put it back to the pool of objects, on [xpool](https://
 Calling `Reset(v)` with some value when acquire the instance and `Reset( <zero value> )` before put it back to the pool of objects, on [xpool/monadic](https://pkg.go.dev/github.com/peczenyj/xpool/monadic) package:
 
 ```go
-    // this constructor can't infer type V, so you should be explicit!
+    // this constructor can't infer type S, so you should be explicit!
     var pool monadic.Pool[[]byte,*bytes.Reader] = monadic.New[[]byte](func() *bytes.Reader {
         return bytes.NewReader(nil)
     })
@@ -126,9 +146,12 @@ It is possible set a custom thread-safe Resetter, instead just call `Reset()` or
 on [xpool](https://pkg.go.dev/github.com/peczenyj/xpool) package:
 
 ```go
-    // both calls are equivalent
+    //besides the log, both calls are equivalent
+
     pool:= xpool.NewWithResetter(sha256.New, func(h hash.Hash) {
         h.Reset()
+
+        log.Println("just reset the hash.Hash")
     }),
 
     // the default resetter try to call `Reset()` method.
@@ -138,16 +161,20 @@ on [xpool](https://pkg.go.dev/github.com/peczenyj/xpool) package:
 on [xpool/monadic](https://pkg.go.dev/github.com/peczenyj/xpool/monadic) package:
 
 ```go
-    // both calls are equivalent
-    pool:= monadic.NewWithResetter(func() *bytes.Reader {
-        return bytes.NewReader(nil)
-    }, func(r *bytes.Reader, b []byte) {
-        r.Reset(b)
-    })
-
-    // the default resetter try to call `Reset([]byte)` method.
+    // besides the log, both calls are equivalent
+    
+    // the monadic pool will try to call `Reset([]byte)` method by default.
     pool:= monadic.New[[]byte](func() *bytes.Reader {
         return bytes.NewReader(nil)
+    })
+
+    // the monadic pool will try to call the specific resetter callback.
+    pool:= monadic.NewWithResetter(func() *bytes.Reader {
+        return bytes.NewReader(nil)
+    }, func(object *bytes.Reader, state []byte) {
+        object.Reset(state)
+
+        log.Println("just reset the *bytes.Buffer")
     })
 ```
 
@@ -156,12 +183,12 @@ You can use custom resetters to handle more complex types of Reset. For instance
 If we can discard the error and set the second parameter a constant value like nil, we can:
 
 ```go
-    // can infer type V from resetter
+    // can infer types from resetter
     poolReader := monadic.NewWithResetter(func() io.ReadCloser {
         return flate.NewReader(nil)
-    }, func(t io.ReadCloser, v io.Reader) {
-        if resetter, ok := any(t).(flate.Resetter); ok {
-            _ = resetter.Reset(v, nil)
+    }, func(object io.ReadCloser, state io.Reader) {
+        if resetter, ok := any(object).(flate.Resetter); ok {
+            _ = resetter.Reset(state, nil)
         }
     })
 ```
@@ -173,12 +200,12 @@ An alternative can be create an object to hold different arguments like in the e
         r    io.Reader
         dict []byte
     }
-    // can infer type V from resetter
+    // can infer type S from resetter
     poolReader := monadic.NewWithResetter(func() io.ReadCloser {
         return flate.NewReader(nil)
-    }, func(t io.ReadCloser, args *flateResetterArgs) {
-        if resetter, ok := any(t).(flate.Resetter); ok {
-            _ = resetter.Reset(args.r, args.dict)
+    }, func(object io.ReadCloser, state *flateResetterArgs) {
+        if resetter, ok := any(oobject).(flate.Resetter); ok {
+            _ = resetter.Reset(state.r, state.dict)
         }
     })
 ```
