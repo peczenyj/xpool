@@ -106,6 +106,48 @@ func TestWithDefaultResetter(t *testing.T) {
 	}
 }
 
+func TestWithDefaultResetterOnResetCallback(t *testing.T) {
+	t.Parallel()
+
+	t.Run("negative case", func(t *testing.T) {
+		t.Parallel()
+
+		var onResetCalledPtr *bool
+
+		pool := xpool.NewWithDefaultResetter(
+			func() string { return "" },
+			func(called bool) {
+				onResetCalledPtr = &called
+			},
+		)
+
+		str := pool.Get()
+		pool.Put(str)
+
+		require.NotNil(t, onResetCalledPtr)
+		assert.False(t, *onResetCalledPtr, "should not call reset on a string")
+	})
+
+	t.Run("positive case", func(t *testing.T) {
+		t.Parallel()
+
+		var onResetCalledPtr *bool
+
+		pool := xpool.NewWithDefaultResetter(
+			func() any { return sha256.New() },
+			func(called bool) {
+				onResetCalledPtr = &called
+			},
+		)
+
+		str := pool.Get()
+		pool.Put(str)
+
+		require.NotNil(t, onResetCalledPtr)
+		assert.True(t, *onResetCalledPtr, "should call reset on a any/hash.Hash")
+	})
+}
+
 func ExampleNew() {
 	// pool can infer T from constructor
 	pool := xpool.New(func() io.ReadWriter {
@@ -120,7 +162,29 @@ func ExampleNew() {
 	fmt.Fprint(rw, "example")
 
 	_, _ = io.Copy(os.Stdout, rw)
-	// Output: example
+	// Output:
+	// example
+}
+
+func ExampleNewWithResetter() {
+	// pool can infer T from constructor
+	var pool xpool.Pool[hash.Hash] = xpool.NewWithResetter(sha256.New,
+		func(h hash.Hash) {
+			h.Reset()
+			fmt.Println("hash resetted with success")
+		},
+	)
+
+	var hasher hash.Hash = pool.Get() // get a new hash.Hash interface
+
+	_, _ = hasher.Write([]byte(`payload`))
+
+	fmt.Printf("%x\n", hasher.Sum(nil))
+
+	pool.Put(hasher) // reset it before put back to sync pool.
+	// Output:
+	// 239f59ed55e737c77147cf55ad0c1b030b6d7ee748a7426952f9b852d5a935e5
+	// hash resetted with success
 }
 
 func ExampleNewWithDefaultResetter() {
@@ -132,6 +196,8 @@ func ExampleNewWithDefaultResetter() {
 
 	_, _ = hasher.Write([]byte(`payload`))
 
-	fmt.Printf("%x", hasher.Sum(nil))
-	// Output: 239f59ed55e737c77147cf55ad0c1b030b6d7ee748a7426952f9b852d5a935e5
+	fmt.Printf("%x\n", hasher.Sum(nil))
+
+	// Output:
+	// 239f59ed55e737c77147cf55ad0c1b030b6d7ee748a7426952f9b852d5a935e5
 }
