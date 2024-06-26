@@ -1,4 +1,14 @@
+## What's Changed in v0.2.0
+* Merge pull request #3 from peczenyj/add-onreset-callbacks
+* remove useless atomic.Pointer
+* add onReset callbacks, improve readmes
+* add onReset callbacks
+* Update README.md
+
+**Full Changelog**: https://github.com///compare/v0.1.1...v0.2.0
+
 ## What's Changed in v0.1.1
+* bump new version
 * Merge pull request #2 from peczenyj/change-min-go
 * change minimum go version
 * Update README.md
