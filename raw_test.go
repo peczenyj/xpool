@@ -30,7 +30,7 @@ func TestRaw(t *testing.T) {
 	if ok {
 		assert.Equal(t, 1, n2)
 	} else {
-		assert.Zero(t, n)
+		assert.Zero(t, n2)
 	}
 
 }
