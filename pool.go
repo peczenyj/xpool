@@ -1,3 +1,20 @@
+// xpool is a type safe object pool build on top of [sync.Pool]
+//
+// It is easy to use, just give a function that can create an object of a given type T
+// as argument of [New] and it will return an implementation of [Pool] interface:
+//
+//	pool := xpool.New(func() io.ReadWriter {
+//	  return new(bytes.Buffer)
+//	})
+//	rw := pool.Get()
+//	defer pool.Put(rw)
+//
+// For stateful objects, when we need to reset the object to an initial state before put it back to the pool,
+// there are two alternative constructors:
+//   - [NewWithDefaultResetter] verify if the type T is a [Resetter] and call Reset() method.
+//   - [NewWithResetter] allow add a generic callback func(T) to perform some more complex operations, if needed.
+//
+// Another alternative is to use https://github.com/peczenyj/xpool/monadicpool subpackage package.
 package xpool
 
 import "sync"
@@ -5,7 +22,10 @@ import "sync"
 var _ Pool[any] = (*sync.Pool)(nil)
 
 // Pool is a type-safe object pool interface.
-// for convenience, *sync.Pool is a Pool[any]
+// This interface is parameterized on one generic types:
+//   - T is reserved for the type of the object that will be stored on the pool.
+//
+// For convenience, a pointer to sync.Pool is a Pool[any]
 type Pool[T any] interface {
 	// Get fetch one item from object pool
 	// If needed, will create another object.
@@ -16,17 +36,6 @@ type Pool[T any] interface {
 	Put(object T)
 }
 
-// New is the constructor of an xpool.Pool[T].
-// Receives the constructor of the type T.
-func New[T any](
-	ctor func() T,
-) Pool[T] {
-	return &simplePool[T]{
-		ctor: ctor,
-		pool: new(Raw[T]),
-	}
-}
-
 // Resetter interface.
 type Resetter interface {
 	// Reset may return the object to his initial state.
@@ -34,7 +43,7 @@ type Resetter interface {
 }
 
 // OnResetCallback type.
-// Will be called with a true value if the value T isa Resetter and was called with success.
+// Will be called with a true value if the value T isa [Resetter] and was called with success.
 type OnResetCallback func(called bool)
 
 type pollConfig struct {
@@ -52,21 +61,30 @@ func WithOnPutResetCallback(onPutResets ...OnResetCallback) Option {
 	}
 }
 
-// NewWithDefaultResetter is an alternative constructor of an xpool.Pool[T].
-// We will call the resetter callback before put the object back to the pool.
+// New is the constructor of an [Pool] for a given generic type T.
+// Receives the constructor of the type T.
+func New[T any](
+	ctor func() T,
+) Pool[T] {
+	return NewWithResetter[T](ctor, nil)
+}
+
+// NewWithDefaultResetter is an alternative constructor of an [Pool] for a given generic type T.
+// We can specify a special resetter, to be called before return the object from the pool.
 // Be careful, the custom resetter must be thread safe.
 func NewWithResetter[T any](
 	ctor func() T,
-	onPutResetter func(T),
+	resetter func(T),
 ) Pool[T] {
-	return &resettablePool[T]{
-		onPutResetter: onPutResetter,
-		pool:          New(ctor),
+	return &simplePool[T]{
+		pool:     new(sync.Pool),
+		ctor:     ctor,
+		resetter: resetter,
 	}
 }
 
-// NewWithDefaultResetter is an alternative constructor of an xpool.Pool[T].
-// If T is a Resetter, before put the object back to object pool we will call Reset().
+// NewWithDefaultResetter is an alternative constructor of an [Pool] for a given generic type T.
+// If T is a [Resetter], before put the object back to object pool we will call Reset().
 func NewWithDefaultResetter[T any](
 	ctor func() T,
 	opts ...Option,
@@ -90,12 +108,13 @@ func NewWithDefaultResetter[T any](
 }
 
 type simplePool[T any] struct {
-	ctor func() T
-	pool *Raw[T]
+	pool     Pool[any]
+	ctor     func() T
+	resetter func(T)
 }
 
 func (p *simplePool[T]) Get() T {
-	object, ok := p.pool.Get()
+	object, ok := p.pool.Get().(T)
 	if !ok {
 		object = p.ctor()
 	}
@@ -104,20 +123,9 @@ func (p *simplePool[T]) Get() T {
 }
 
 func (p *simplePool[T]) Put(object T) {
-	p.pool.Put(object)
-}
-
-type resettablePool[T any] struct {
-	onPutResetter func(T)
-	pool          Pool[T]
-}
-
-func (p *resettablePool[T]) Get() T {
-	return p.pool.Get()
-}
-
-func (p *resettablePool[T]) Put(object T) {
-	p.onPutResetter(object)
+	if p.resetter != nil {
+		p.resetter(object)
+	}
 
 	p.pool.Put(object)
 }

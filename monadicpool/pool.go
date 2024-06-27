@@ -1,3 +1,31 @@
+// The intent of monadicpool is to support stateful objects.
+//
+// Different than [xpool.Pool], the monadic [Pool] handle two different generic types: S and T
+//   - T is the type of the object returned from the pool
+//   - S is the state, where we set before return an object, and reset it back to zero value of S when put back to the pool.
+//
+// In other words, instead having to do:
+//
+//	pool := xpool.New(func() *bytes.Reader { // you must use a type or interface that exposes a Reset() method
+//	  return bytes.NewReader(nil)
+//	})
+//
+//	br := pool.Get()
+//	defer func() { br.Reset(nil) ; pool.Put(br) }()
+//
+//	br.Reset(payload)
+//	// use the byte reader here
+//
+// We can use [New] to create a monadic [Pool] that manage the state of [bytes.Reader] via Reset method implicity:
+//
+//	pool := monadicpool.New[[]byte](func() io.Reader { // you can use any interface that you want
+//	  return bytes.NewReader(nil)
+//	}
+//
+//	br := pool.Get(payload) // implicit Reset(payload) -- Get(state) is monadic, instead the niladic version on xpool.Pool
+//	defer pool.Put(br)      // implicit Reset(nil)     -- the zero value of state S, []byte on this case
+//
+//	// use byte reader here as io.Reader
 package monadicpool
 
 import (
@@ -5,6 +33,9 @@ import (
 )
 
 // Pool monadic is a type-safe object pool interface.
+// This interface is parameterized on two generic types:
+//   - T is reserved for the type of the object that will be stored on the pool.
+//   - S is reserved for the status of the object to be setted before return the object from the pool.
 type Pool[S, T any] interface {
 	// Get fetch one item from object pool. If needed, will create another object.
 	// The state S will be used in the resetter.
@@ -21,7 +52,7 @@ type Resetter[S any] interface {
 }
 
 // OnResetCallback type.
-// Will be called with a true value if the value T isa Resetter and was called with success.
+// Will be called with a true value if the value T isa [Resetter] and was called with success.
 type OnResetCallback func(called bool)
 
 type pollConfig struct {
@@ -48,9 +79,9 @@ func WithOnPutResetCallback(onPutResets ...OnResetCallback) Option {
 	}
 }
 
-// New is the constructor of an monadicpool.Pool[T].
+// New is the constructor of an [Pool] for a given set of generic types S and T.
 // Receives the constructor of the type T.
-// It sets a trivial resetter, that try to convert T to Resetter[S]
+// It sets a trivial resetter, that try to convert T to [Resetter]
 // will call Reset(state S) before return the object on Get(state S)
 // will call Reset(zero value of S) before push back to the pool.
 func New[S, T any](
@@ -92,10 +123,10 @@ func buildDefaultResetter[S, T any](
 	}
 }
 
-// New is the constructor of an monadicppool.Pool[T].
-// Receives the constructor of the type T.
-// It allow to specify a special resetter, to be called before return the object from the pool.
-// The resetter will be called with zero value of S before push back to the pool.
+// NewWithResetter is the constructor of an [Pool] for a given set of generic types S and T.
+// Receives the constructor of the type T as a callback.
+// We can specify a special resetter, to be called with a zero value of S before
+// return the object from the pool.
 // Be careful, the custom resetter must be thread safe.
 func NewWithResetter[S, T any](
 	ctor func() T,
