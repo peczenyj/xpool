@@ -1,4 +1,4 @@
-package monadic_test
+package monadicpool_test
 
 import (
 	"bytes"
@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/peczenyj/xpool/monadic"
+	"github.com/peczenyj/xpool/monadicpool"
 )
 
 func TestResetterMonadic(t *testing.T) {
@@ -21,17 +21,17 @@ func TestResetterMonadic(t *testing.T) {
 
 	testCases := []struct {
 		label string
-		pool  monadic.Pool[[]byte, *bytes.Reader]
+		pool  monadicpool.Pool[[]byte, *bytes.Reader]
 	}{
 		{
 			label: "monadic New + implicit default Reset",
-			pool: monadic.New[[]byte](func() *bytes.Reader {
+			pool: monadicpool.New[[]byte](func() *bytes.Reader {
 				return bytes.NewReader(nil)
 			}),
 		},
 		{
 			label: "monadic NewWithResetter + explicit custom Reset",
-			pool: monadic.NewWithResetter(func() *bytes.Reader {
+			pool: monadicpool.NewWithResetter(func() *bytes.Reader {
 				return bytes.NewReader(nil)
 			}, func(r *bytes.Reader, b []byte) {
 				r.Reset(b)
@@ -74,12 +74,12 @@ func TestOnResetCallbacks(t *testing.T) {
 			onPutCalls []bool
 		)
 
-		pool := monadic.New[int](
+		pool := monadicpool.New[int](
 			func() string { return "" },
-			monadic.WithOnGetResetCallback(func(called bool) {
+			monadicpool.WithOnGetResetCallback(func(called bool) {
 				onGetCalls = append(onGetCalls, called)
 			}),
-			monadic.WithOnPutResetCallback(func(called bool) {
+			monadicpool.WithOnPutResetCallback(func(called bool) {
 				onPutCalls = append(onPutCalls, called)
 			}),
 		)
@@ -102,12 +102,12 @@ func TestOnResetCallbacks(t *testing.T) {
 			onPutCalls []bool
 		)
 
-		pool := monadic.New[int](
+		pool := monadicpool.New[int](
 			func() io.Reader { return bytes.NewReader(nil) },
-			monadic.WithOnGetResetCallback(func(called bool) {
+			monadicpool.WithOnGetResetCallback(func(called bool) {
 				onGetCalls = append(onGetCalls, called)
 			}),
-			monadic.WithOnPutResetCallback(func(called bool) {
+			monadicpool.WithOnPutResetCallback(func(called bool) {
 				onPutCalls = append(onPutCalls, called)
 			}),
 		)
@@ -130,12 +130,12 @@ func TestOnResetCallbacks(t *testing.T) {
 			onPutCalls []bool
 		)
 
-		pool := monadic.New[[]byte](
+		pool := monadicpool.New[[]byte](
 			func() io.Reader { return bytes.NewReader(nil) },
-			monadic.WithOnGetResetCallback(func(called bool) {
+			monadicpool.WithOnGetResetCallback(func(called bool) {
 				onGetCalls = append(onGetCalls, called)
 			}),
-			monadic.WithOnPutResetCallback(func(called bool) {
+			monadicpool.WithOnPutResetCallback(func(called bool) {
 				onPutCalls = append(onPutCalls, called)
 			}),
 		)
@@ -153,7 +153,7 @@ func TestOnResetCallbacks(t *testing.T) {
 
 func ExampleNew() {
 	// can't infer type V, must be explicit
-	var pool monadic.Pool[[]byte, io.Reader] = monadic.New[[]byte](func() io.Reader {
+	var pool monadicpool.Pool[[]byte, io.Reader] = monadicpool.New[[]byte](func() io.Reader {
 		return bytes.NewReader(nil)
 	})
 
@@ -166,7 +166,7 @@ func ExampleNew() {
 
 func ExampleNewWithResetter() {
 	// can't infer type V, must be explicit
-	poolWriter := monadic.New[io.Writer](
+	poolWriter := monadicpool.New[io.Writer](
 		func() io.WriteCloser {
 			zw, _ := flate.NewWriter(nil, flate.DefaultCompression)
 			return zw
@@ -174,7 +174,7 @@ func ExampleNewWithResetter() {
 	)
 
 	// can infer type V from resetter
-	poolReader := monadic.NewWithResetter(func() io.ReadCloser {
+	poolReader := monadicpool.NewWithResetter(func() io.ReadCloser {
 		return flate.NewReader(nil)
 	}, func(t io.ReadCloser, v io.Reader) {
 		if resetter, ok := any(t).(flate.Resetter); ok {

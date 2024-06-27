@@ -104,7 +104,7 @@ type Resetter[S any] interface {
 }
 ```
 
-Monadic resetters are handling by package [xpool/monadic](https://pkg.go.dev/github.com/peczenyj/xpool/monadic).
+Monadic resetters are handling by package [xpool/monadicpool](https://pkg.go.dev/github.com/peczenyj/xpool/monadicpool).
 
 Important: you may not want to expose objects with a `Reset` method, the xpool will not ensure that the type `T` is a `Resetter[S]` unless you define it like this.
 
@@ -125,13 +125,15 @@ Calling `Reset()` before put it back to the pool of objects, on [xpool](https://
     value := hasher.Sum(nil)
 ```
 
-Calling `Reset(v)` with some value when acquire the instance and `Reset( <zero value> )` before put it back to the pool of objects, on [xpool/monadic](https://pkg.go.dev/github.com/peczenyj/xpool/monadic) package:
+Calling `Reset(v)` with some value when acquire the instance and `Reset( <zero value> )` before put it back to the pool of objects, on [xpool/monadicpool](https://pkg.go.dev/github.com/peczenyj/xpool/monadicpool) package:
 
 ```go
     // this constructor can't infer type S, so you should be explicit!
-    var pool monadic.Pool[[]byte,*bytes.Reader] = monadic.New[[]byte](func() *bytes.Reader {
-        return bytes.NewReader(nil)
-    })
+    var pool monadicpool.Pool[[]byte,*bytes.Reader] = monadicpool.New[[]byte](
+        func() *bytes.Reader {
+            return bytes.NewReader(nil)
+        },
+    )
 
     reader := pool.Get([]byte(`payload`)) // reset the bytes.Reader with payload
     defer pool.Put(reader)                // reset the bytes.Reader with nil
@@ -148,28 +150,30 @@ on [xpool](https://pkg.go.dev/github.com/peczenyj/xpool) package:
 ```go
     //besides the log, both calls are equivalent
 
-    pool:= xpool.NewWithResetter(sha256.New, func(h hash.Hash) {
-        h.Reset()
+    pool:= xpool.NewWithResetter(sha256.New, 
+        func(h hash.Hash) {
+            h.Reset()
 
-        log.Println("just reset the hash.Hash")
-    }),
+            log.Println("just reset the hash.Hash")
+        },
+    ),
 
     // the default resetter try to call `Reset()` method.
     pool:=  xpool.NewWithDefaultResetter(sha256.New),
 ```
 
-on [xpool/monadic](https://pkg.go.dev/github.com/peczenyj/xpool/monadic) package:
+on [xpool/monadicpool](https://pkg.go.dev/github.com/peczenyj/xpool/monadicpool) package:
 
 ```go
     // besides the log, both calls are equivalent
     
-    // the monadic pool will try to call `Reset([]byte)` method by default.
-    pool:= monadic.New[[]byte](func() *bytes.Reader {
+    // the monadicpool pool will try to call `Reset([]byte)` method by default.
+    pool:= monadicpool.New[[]byte](func() *bytes.Reader {
         return bytes.NewReader(nil)
     })
 
-    // the monadic pool will try to call the specific resetter callback.
-    pool:= monadic.NewWithResetter(func() *bytes.Reader {
+    // the monadicpool pool will try to call the specific resetter callback.
+    pool:= monadicpool.NewWithResetter(func() *bytes.Reader {
         return bytes.NewReader(nil)
     }, func(object *bytes.Reader, state []byte) {
         object.Reset(state)
@@ -184,7 +188,7 @@ If we can discard the error and set the second parameter a constant value like n
 
 ```go
     // can infer types from resetter
-    poolReader := monadic.NewWithResetter(func() io.ReadCloser {
+    poolReader := monadicpool.NewWithResetter(func() io.ReadCloser {
         return flate.NewReader(nil)
     }, func(object io.ReadCloser, state io.Reader) {
         if resetter, ok := any(object).(flate.Resetter); ok {
@@ -201,7 +205,7 @@ An alternative can be create an object to hold different arguments like in the e
         dict []byte
     }
     // can infer type S from resetter
-    poolReader := monadic.NewWithResetter(func() io.ReadCloser {
+    poolReader := monadicpool.NewWithResetter(func() io.ReadCloser {
         return flate.NewReader(nil)
     }, func(object io.ReadCloser, state *flateResetterArgs) {
         if resetter, ok := any(oobject).(flate.Resetter); ok {
@@ -214,4 +218,30 @@ Custom resetters can do more than just set the status of the object, they can be
 
 ## Important
 
-On [xpool](https://pkg.go.dev/github.com/peczenyj/xpool) the resetter is optional, while on [xpool/monadic](https://pkg.go.dev/github.com/peczenyj/xpool/monadic) this is mandatory. If you don't want to have resetters on a monadic xpool, please create a regular `xpool.Pool`.
+On [xpool](https://pkg.go.dev/github.com/peczenyj/xpool) the resetter is optional, while on [xpool/monadicpool](https://pkg.go.dev/github.com/peczenyj/xpool/monadicpool) this is mandatory. If you don't want to have resetters on a monadicpool xpool, please create a regular `xpool.Pool`.
+
+## Raw pool
+
+If you want a minimal implementation of a type safe object pool, you can use the `xpool.Pool[T]`.
+
+```go
+    var pool xpool.Raw[*bytes.Reader]
+
+    r, ok := pool.Get()
+    if !ok {
+        // need to explicit create
+        r = bytes.NewReader(nil)
+    }
+    // explicit set the state
+    r.Reset([]byte(`payload`))
+
+    defer func() {
+        // explicit reset
+        r.Reset(nil)
+
+        // add it back to the pool
+        pool.Put(r)
+    }()
+
+    // use the bytes reader r 
+```

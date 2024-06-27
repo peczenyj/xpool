@@ -16,14 +16,14 @@ type Pool[T any] interface {
 	Put(object T)
 }
 
-// New is the constructor of an xpool.Pool.
+// New is the constructor of an xpool.Pool[T].
 // Receives the constructor of the type T.
 func New[T any](
 	ctor func() T,
 ) Pool[T] {
 	return &simplePool[T]{
 		ctor: ctor,
-		pool: new(sync.Pool),
+		pool: new(Raw[T]),
 	}
 }
 
@@ -52,7 +52,7 @@ func WithOnPutResetCallback(onPutResets ...OnResetCallback) Option {
 	}
 }
 
-// NewWithDefaultResetter is an alternative constructor of an xpool.Pool.
+// NewWithDefaultResetter is an alternative constructor of an xpool.Pool[T].
 // We will call the resetter callback before put the object back to the pool.
 // Be careful, the custom resetter must be thread safe.
 func NewWithResetter[T any](
@@ -60,12 +60,12 @@ func NewWithResetter[T any](
 	onPutResetter func(T),
 ) Pool[T] {
 	return &resettablePool[T]{
-		pool:          New(ctor),
 		onPutResetter: onPutResetter,
+		pool:          New(ctor),
 	}
 }
 
-// NewWithDefaultResetter is an alternative constructor of an xpool.Pool.
+// NewWithDefaultResetter is an alternative constructor of an xpool.Pool[T].
 // If T is a Resetter, before put the object back to object pool we will call Reset().
 func NewWithDefaultResetter[T any](
 	ctor func() T,
@@ -77,8 +77,8 @@ func NewWithDefaultResetter[T any](
 		opt(&c)
 	}
 
-	return NewWithResetter(ctor, func(t T) {
-		defaultResetter, ok := any(t).(Resetter)
+	return NewWithResetter(ctor, func(object T) {
+		defaultResetter, ok := any(object).(Resetter)
 		if ok {
 			defaultResetter.Reset()
 		}
@@ -91,33 +91,33 @@ func NewWithDefaultResetter[T any](
 
 type simplePool[T any] struct {
 	ctor func() T
-	pool Pool[any]
+	pool *Raw[T]
 }
 
 func (p *simplePool[T]) Get() T {
-	obj, ok := p.pool.Get().(T)
+	object, ok := p.pool.Get()
 	if !ok {
-		obj = p.ctor()
+		object = p.ctor()
 	}
 
-	return obj
+	return object
 }
 
-func (p *simplePool[T]) Put(obj T) {
-	p.pool.Put(obj)
+func (p *simplePool[T]) Put(object T) {
+	p.pool.Put(object)
 }
 
 type resettablePool[T any] struct {
-	pool          Pool[T]
 	onPutResetter func(T)
+	pool          Pool[T]
 }
 
 func (p *resettablePool[T]) Get() T {
 	return p.pool.Get()
 }
 
-func (p *resettablePool[T]) Put(obj T) {
-	p.onPutResetter(obj)
+func (p *resettablePool[T]) Put(object T) {
+	p.onPutResetter(object)
 
-	p.pool.Put(obj)
+	p.pool.Put(object)
 }

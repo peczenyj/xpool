@@ -1,4 +1,4 @@
-# xpool/monadic
+# xpool/monadicpool
 
 ## Definition
 
@@ -27,12 +27,12 @@ We offer two constructors:
     // besides the log, both calls are equivalent
 
     // the monadic pool will try to call `Reset([]byte)` method by default.
-    pool:= monadic.New[[]byte](func() *bytes.Reader {
+    pool:= monadicpool.New[[]byte](func() *bytes.Reader {
         return bytes.NewReader(nil)
     })
 
     // the monadic pool will try to call the specific resetter callback.
-    pool:= monadic.NewWithResetter(func() *bytes.Reader {
+    pool:= monadicpool.NewWithResetter(func() *bytes.Reader {
         return bytes.NewReader(nil)
     }, func(r *bytes.Reader, b []byte) {
         r.Reset(b)
@@ -45,7 +45,7 @@ using the second constructor, you can build more complex resetters, like:
 
 ```go
     // can infer types from resetter
-    poolReader := monadic.NewWithResetter(func() io.ReadCloser {
+    poolReader := monadicpool.NewWithResetter(func() io.ReadCloser {
         return flate.NewReader(nil)
     }, func(object io.ReadCloser, state io.Reader) {
         if resetter, ok := any(object).(flate.Resetter); ok {
