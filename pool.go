@@ -57,11 +57,11 @@ func WithOnPutResetCallback(onPutResets ...OnResetCallback) Option {
 // Be careful, the custom resetter must be thread safe.
 func NewWithResetter[T any](
 	ctor func() T,
-	resetter func(T),
+	onPutResetter func(T),
 ) Pool[T] {
 	return &resettablePool[T]{
-		pool:     New(ctor),
-		resetter: resetter,
+		pool:          New(ctor),
+		onPutResetter: onPutResetter,
 	}
 }
 
@@ -91,7 +91,7 @@ func NewWithDefaultResetter[T any](
 
 type simplePool[T any] struct {
 	ctor func() T
-	pool *sync.Pool
+	pool Pool[any]
 }
 
 func (p *simplePool[T]) Get() T {
@@ -108,8 +108,8 @@ func (p *simplePool[T]) Put(obj T) {
 }
 
 type resettablePool[T any] struct {
-	pool     Pool[T]
-	resetter func(T)
+	pool          Pool[T]
+	onPutResetter func(T)
 }
 
 func (p *resettablePool[T]) Get() T {
@@ -117,7 +117,7 @@ func (p *resettablePool[T]) Get() T {
 }
 
 func (p *resettablePool[T]) Put(obj T) {
-	p.resetter(obj)
+	p.onPutResetter(obj)
 
 	p.pool.Put(obj)
 }

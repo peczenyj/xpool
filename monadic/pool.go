@@ -64,12 +64,16 @@ func New[S, T any](
 	}
 
 	onGetResetter := buildDefaultResetter[S, T](c.onGetResets...)
-	onPutResetter := buildZeroResetter[S, T](c.onPutResets...)
+	onPutResetter := buildDefaultResetter[S, T](c.onPutResets...)
 
 	return newWithResetters[S, T](
 		ctor,
 		onGetResetter,
-		onPutResetter,
+		func(object T) {
+			var zero S
+
+			onPutResetter(object, zero)
+		},
 	)
 }
 
@@ -88,17 +92,6 @@ func buildDefaultResetter[S, T any](
 	}
 }
 
-func buildZeroResetter[S, T any](
-	onResets ...OnResetCallback,
-) func(object T) {
-	defaultResetter := buildDefaultResetter[S, T](onResets...)
-	return func(object T) {
-		var zero S
-
-		defaultResetter(object, zero)
-	}
-}
-
 // New is the constructor of an *xpool.Pool.
 // Receives the constructor of the type T.
 // It allow to specify a special resetter, to be called before return the object from the pool.
@@ -106,18 +99,16 @@ func buildZeroResetter[S, T any](
 // Be careful, the custom resetter must be thread safe.
 func NewWithResetter[S, T any](
 	ctor func() T,
-	resetter func(object T, state S),
+	customResetter func(object T, state S),
 ) Pool[S, T] {
-	onPutResetter := func(object T) {
-		var zero S
-
-		resetter(object, zero)
-	}
-
-	return newWithResetters(
+	return newWithResetters[S, T](
 		ctor,
-		resetter,
-		onPutResetter,
+		customResetter,
+		func(object T) {
+			var zero S
+
+			customResetter(object, zero)
+		},
 	)
 }
 
