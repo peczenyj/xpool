@@ -1,4 +1,15 @@
+## What's Changed in v0.3.0
+* add raw pool type, rename monadic pool
+* Merge pull request #5 from peczenyj/add-functional-options
+* small refactor
+* rename options
+* add functional options instead receive raw callbacks
+* fix godoc
+
+**Full Changelog**: https://github.com///compare/v0.2.0...v0.3.0
+
 ## What's Changed in v0.2.0
+* bump version
 * Merge pull request #3 from peczenyj/add-onreset-callbacks
 * remove useless atomic.Pointer
 * add onReset callbacks, improve readmes
