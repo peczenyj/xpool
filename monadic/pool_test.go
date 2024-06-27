@@ -66,87 +66,88 @@ func TestResetterMonadic(t *testing.T) {
 func TestOnResetCallbacks(t *testing.T) {
 	t.Parallel()
 
-	type callbackArgs struct {
-		called bool
-		onGet  bool
-	}
-
 	t.Run("negative case / has no Reset method", func(t *testing.T) {
 		t.Parallel()
 
-		var callbackCalls []callbackArgs
+		var (
+			onGetCalls []bool
+			onPutCalls []bool
+		)
 
 		pool := monadic.New[int](
 			func() string { return "" },
-			func(called, onGet bool) {
-				callbackCalls = append(callbackCalls, callbackArgs{
-					called: called,
-					onGet:  onGet,
-				})
-			},
+			monadic.WithOnGetResetCallback(func(called bool) {
+				onGetCalls = append(onGetCalls, called)
+			}),
+			monadic.WithOnPutResetCallback(func(called bool) {
+				onPutCalls = append(onPutCalls, called)
+			}),
 		)
 
 		instance := pool.Get(1)
 		pool.Put(instance)
 
-		require.Len(t, callbackCalls, 2)
+		require.Len(t, onGetCalls, 1)
+		assert.False(t, onGetCalls[0], "should not call Reset(int) on Get on a string")
 
-		assert.False(t, callbackCalls[0].called, "should not call Reset on a string")
-		assert.True(t, callbackCalls[0].onGet, "first call should be on Get")
-		assert.False(t, callbackCalls[1].called, "should not call Reset on a string")
-		assert.False(t, callbackCalls[1].onGet, "second call should be on Put")
+		require.Len(t, onPutCalls, 1)
+		assert.False(t, onPutCalls[0], "should not call Reset(int) on Put on a string")
 	})
 
 	t.Run("negative case / has Reset method but the argument type must match", func(t *testing.T) {
 		t.Parallel()
 
-		var callbackCalls []callbackArgs
+		var (
+			onGetCalls []bool
+			onPutCalls []bool
+		)
 
 		pool := monadic.New[int](
 			func() io.Reader { return bytes.NewReader(nil) },
-			func(called, onGet bool) {
-				callbackCalls = append(callbackCalls, callbackArgs{
-					called: called,
-					onGet:  onGet,
-				})
-			},
+			monadic.WithOnGetResetCallback(func(called bool) {
+				onGetCalls = append(onGetCalls, called)
+			}),
+			monadic.WithOnPutResetCallback(func(called bool) {
+				onPutCalls = append(onPutCalls, called)
+			}),
 		)
 
 		instance := pool.Get(1)
 		pool.Put(instance)
 
-		require.Len(t, callbackCalls, 2)
+		require.Len(t, onGetCalls, 1)
+		assert.False(t, onGetCalls[0], "should not call Reset(int) on Get on a *bytes.Reader")
 
-		assert.False(t, callbackCalls[0].called, "should not call Reset(int) on a *bytes.Reader")
-		assert.True(t, callbackCalls[0].onGet, "first call should be on Get")
-		assert.False(t, callbackCalls[1].called, "should not call Reset(int) on a *bytes.Reader")
-		assert.False(t, callbackCalls[1].onGet, "second call should be on Put")
+		require.Len(t, onPutCalls, 1)
+		assert.False(t, onPutCalls[0], "should not call Reset(int) on Put on a *bytes.Reader")
 	})
 
 	t.Run("positive case", func(t *testing.T) {
 		t.Parallel()
 
-		var callbackCalls []callbackArgs
+		var (
+			onGetCalls []bool
+			onPutCalls []bool
+		)
 
 		pool := monadic.New[[]byte](
 			func() io.Reader { return bytes.NewReader(nil) },
-			func(called, onGet bool) {
-				callbackCalls = append(callbackCalls, callbackArgs{
-					called: called,
-					onGet:  onGet,
-				})
-			},
+			monadic.WithOnGetResetCallback(func(called bool) {
+				onGetCalls = append(onGetCalls, called)
+			}),
+			monadic.WithOnPutResetCallback(func(called bool) {
+				onPutCalls = append(onPutCalls, called)
+			}),
 		)
 
 		instance := pool.Get([]byte(`something`))
 		pool.Put(instance)
 
-		require.Len(t, callbackCalls, 2)
+		require.Len(t, onGetCalls, 1)
+		assert.True(t, onGetCalls[0], "should not call Reset([]byte) on Get on a *bytes.Reader")
 
-		assert.True(t, callbackCalls[0].called, "should call Reset([]byte) on a *bytes.Reader")
-		assert.True(t, callbackCalls[0].onGet, "first call should be on Get")
-		assert.True(t, callbackCalls[1].called, "should call Reset([]byte) on a *bytes.Reader")
-		assert.False(t, callbackCalls[1].onGet, "second call should be on Put")
+		require.Len(t, onPutCalls, 1)
+		assert.True(t, onPutCalls[0], "should not call Reset([]byte) on Put on a *bytes.Reader")
 	})
 }
 

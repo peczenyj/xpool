@@ -16,6 +16,17 @@ type Pool[T any] interface {
 	Put(object T)
 }
 
+// New is the constructor of an xpool.Pool.
+// Receives the constructor of the type T.
+func New[T any](
+	ctor func() T,
+) Pool[T] {
+	return &simplePool[T]{
+		ctor: ctor,
+		pool: new(sync.Pool),
+	}
+}
+
 // Resetter interface.
 type Resetter interface {
 	// Reset may return the object to his initial state.
@@ -26,14 +37,18 @@ type Resetter interface {
 // Will be called with a true value if the value T isa Resetter and was called with success.
 type OnResetCallback func(called bool)
 
-// New is the constructor of an xpool.Pool.
-// Receives the constructor of the type T.
-func New[T any](
-	ctor func() T,
-) Pool[T] {
-	return &simplePool[T]{
-		ctor: ctor,
-		pool: new(sync.Pool),
+type pollConfig struct {
+	onResets []OnResetCallback
+}
+
+// Option type.
+type Option func(*pollConfig)
+
+// WithOnResetCallback is a functional option.
+// Includes one callback of type OnResetCallback to be executed on object reset.
+func WithOnResetCallback(onReset OnResetCallback) Option {
+	return func(o *pollConfig) {
+		o.onResets = append(o.onResets, onReset)
 	}
 }
 
@@ -52,18 +67,23 @@ func NewWithResetter[T any](
 
 // NewWithDefaultResetter is an alternative constructor of an xpool.Pool.
 // If T is a Resetter, before put the object back to object pool we will call Reset().
-// It accepts optional callbacks to be executed after a Reset.
 func NewWithDefaultResetter[T any](
 	ctor func() T,
-	onResets ...OnResetCallback,
+	opts ...Option,
 ) Pool[T] {
+	var c pollConfig
+
+	for _, opt := range opts {
+		opt(&c)
+	}
+
 	return NewWithResetter(ctor, func(t T) {
 		defaultResetter, ok := any(t).(Resetter)
 		if ok {
 			defaultResetter.Reset()
 		}
 
-		for _, onReset := range onResets {
+		for _, onReset := range c.onResets {
 			onReset(ok)
 		}
 	})
