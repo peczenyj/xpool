@@ -33,18 +33,18 @@ type pollConfig struct {
 type Option func(*pollConfig)
 
 // WithOnGetResetCallback is a functional option.
-// Includes one callback of type OnResetCallback to be executed on object reset on Get method.
-func WithOnGetResetCallback(onReset OnResetCallback) Option {
+// Includes one or more callbacks to be executed on object reset on Get method.
+func WithOnGetResetCallback(onGetResets ...OnResetCallback) Option {
 	return func(o *pollConfig) {
-		o.onGetResets = append(o.onGetResets, onReset)
+		o.onGetResets = append(o.onGetResets, onGetResets...)
 	}
 }
 
 // WithOnPutResetCallback is a functional option.
-// Includes one callback of type OnResetCallback to be executed on object reset on Put method.
-func WithOnPutResetCallback(onReset OnResetCallback) Option {
+// Includes one or more callbacks to be executed on object reset on Put method.
+func WithOnPutResetCallback(onPutResets ...OnResetCallback) Option {
 	return func(o *pollConfig) {
-		o.onPutResets = append(o.onPutResets, onReset)
+		o.onPutResets = append(o.onPutResets, onPutResets...)
 	}
 }
 

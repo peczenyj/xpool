@@ -38,17 +38,17 @@ type Resetter interface {
 type OnResetCallback func(called bool)
 
 type pollConfig struct {
-	onResets []OnResetCallback
+	onPutResets []OnResetCallback
 }
 
 // Option type.
 type Option func(*pollConfig)
 
-// WithOnResetCallback is a functional option.
-// Includes one callback of type OnResetCallback to be executed on object reset.
-func WithOnResetCallback(onReset OnResetCallback) Option {
+// WithOnPutResetCallback is a functional option.
+// Includes one or more callbacks to be executed on object reset on Put method.
+func WithOnPutResetCallback(onPutResets ...OnResetCallback) Option {
 	return func(o *pollConfig) {
-		o.onResets = append(o.onResets, onReset)
+		o.onPutResets = append(o.onPutResets, onPutResets...)
 	}
 }
 
@@ -83,7 +83,7 @@ func NewWithDefaultResetter[T any](
 			defaultResetter.Reset()
 		}
 
-		for _, onReset := range c.onResets {
+		for _, onReset := range c.onPutResets {
 			onReset(ok)
 		}
 	})
