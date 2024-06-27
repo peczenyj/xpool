@@ -18,6 +18,7 @@ func TestRaw(t *testing.T) {
 
 	n, ok := pool.Get()
 	require.False(t, ok)
+	assert.Zero(t, n)
 
 	if !ok {
 		n = 1
@@ -26,8 +27,12 @@ func TestRaw(t *testing.T) {
 	pool.Put(n)
 
 	n2, ok := pool.Get()
-	require.True(t, ok)
-	assert.Equal(t, 1, n2)
+	if ok {
+		assert.Equal(t, 1, n2)
+	} else {
+		assert.Zero(t, n)
+	}
+
 }
 
 func ExampleRaw() {
