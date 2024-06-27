@@ -219,29 +219,3 @@ Custom resetters can do more than just set the status of the object, they can be
 ## Important
 
 On [xpool](https://pkg.go.dev/github.com/peczenyj/xpool) the resetter is optional, while on [xpool/monadicpool](https://pkg.go.dev/github.com/peczenyj/xpool/monadicpool) this is mandatory. If you don't want to have resetters on a monadicpool xpool, please create a regular `xpool.Pool`.
-
-## Raw pool
-
-If you want a minimal implementation of a type safe object pool, you can use the `xpool.Pool[T]`.
-
-```go
-    var pool xpool.Raw[*bytes.Reader]
-
-    r, ok := pool.Get()
-    if !ok {
-        // need to explicit create
-        r = bytes.NewReader(nil)
-    }
-    // explicit set the state
-    r.Reset([]byte(`payload`))
-
-    defer func() {
-        // explicit reset
-        r.Reset(nil)
-
-        // add it back to the pool
-        pool.Put(r)
-    }()
-
-    // use the bytes reader r 
-```
