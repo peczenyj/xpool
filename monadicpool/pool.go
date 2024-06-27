@@ -1,4 +1,4 @@
-package monadic
+package monadicpool
 
 import (
 	"github.com/peczenyj/xpool"
@@ -48,7 +48,7 @@ func WithOnPutResetCallback(onPutResets ...OnResetCallback) Option {
 	}
 }
 
-// New is the constructor of an *xpool.Pool.
+// New is the constructor of an monadicpool.Pool[T].
 // Receives the constructor of the type T.
 // It sets a trivial resetter, that try to convert T to Resetter[S]
 // will call Reset(state S) before return the object on Get(state S)
@@ -92,7 +92,7 @@ func buildDefaultResetter[S, T any](
 	}
 }
 
-// New is the constructor of an *xpool.Pool.
+// New is the constructor of an monadicppool.Pool[T].
 // Receives the constructor of the type T.
 // It allow to specify a special resetter, to be called before return the object from the pool.
 // The resetter will be called with zero value of S before push back to the pool.
