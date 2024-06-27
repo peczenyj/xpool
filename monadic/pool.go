@@ -21,36 +21,63 @@ type Resetter[S any] interface {
 }
 
 // OnResetCallback type.
-// Will be called on each Reset with two parameters:
-//   - called: will be true if T isa Resetter[S]
-//   - onGet: will be true if the Reset is on Get(state S), else it is on Put(object T)
-type OnResetCallback func(called, onGet bool)
+// Will be called with a true value if the value T isa Resetter and was called with success.
+type OnResetCallback func(called bool)
+
+type pollConfig struct {
+	onGetResets []OnResetCallback
+	onPutResets []OnResetCallback
+}
+
+// Option type.
+type Option func(*pollConfig)
+
+// WithOnGetResetCallback is a functional option.
+// Includes one or more callbacks to be executed on object reset on Get method.
+func WithOnGetResetCallback(onGetResets ...OnResetCallback) Option {
+	return func(o *pollConfig) {
+		o.onGetResets = append(o.onGetResets, onGetResets...)
+	}
+}
+
+// WithOnPutResetCallback is a functional option.
+// Includes one or more callbacks to be executed on object reset on Put method.
+func WithOnPutResetCallback(onPutResets ...OnResetCallback) Option {
+	return func(o *pollConfig) {
+		o.onPutResets = append(o.onPutResets, onPutResets...)
+	}
+}
 
 // New is the constructor of an *xpool.Pool.
 // Receives the constructor of the type T.
 // It sets a trivial resetter, that try to convert T to Resetter[S]
 // will call Reset(state S) before return the object on Get(state S)
 // will call Reset(zero value of S) before push back to the pool.
-// It accepts optional callbacks to be executed after a Reset.
 func New[S, T any](
 	ctor func() T,
-	onResets ...OnResetCallback,
+	opts ...Option,
 ) Pool[S, T] {
-	onGetResetter := buildDefaultResetter[S, T](true, onResets...)
-	onPutResetter := buildDefaultResetter[S, T](false, onResets...)
+	var c pollConfig
+
+	for _, opt := range opts {
+		opt(&c)
+	}
+
+	onGetResetter := buildDefaultResetter[S, T](c.onGetResets...)
+	onPutResetter := buildDefaultResetter[S, T](c.onPutResets...)
 
 	return newWithResetters[S, T](
 		ctor,
 		onGetResetter,
 		func(object T) {
 			var zero S
+
 			onPutResetter(object, zero)
 		},
 	)
 }
 
 func buildDefaultResetter[S, T any](
-	onGet bool,
 	onResets ...OnResetCallback,
 ) func(object T, state S) {
 	return func(object T, state S) {
@@ -60,7 +87,7 @@ func buildDefaultResetter[S, T any](
 		}
 
 		for _, onReset := range onResets {
-			onReset(ok, onGet)
+			onReset(ok)
 		}
 	}
 }
@@ -72,18 +99,16 @@ func buildDefaultResetter[S, T any](
 // Be careful, the custom resetter must be thread safe.
 func NewWithResetter[S, T any](
 	ctor func() T,
-	resetter func(object T, state S),
+	customResetter func(object T, state S),
 ) Pool[S, T] {
-	onPutResetter := func(object T) {
-		var zero S
-
-		resetter(object, zero)
-	}
-
-	return newWithResetters(
+	return newWithResetters[S, T](
 		ctor,
-		resetter,
-		onPutResetter,
+		customResetter,
+		func(object T) {
+			var zero S
+
+			customResetter(object, zero)
+		},
 	)
 }
 

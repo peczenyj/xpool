@@ -116,9 +116,11 @@ func TestWithDefaultResetterOnResetCallback(t *testing.T) {
 
 		pool := xpool.NewWithDefaultResetter(
 			func() string { return "" },
-			func(called bool) {
-				onResetCalledPtr = &called
-			},
+			xpool.WithOnPutResetCallback(
+				func(called bool) {
+					onResetCalledPtr = &called
+				},
+			),
 		)
 
 		str := pool.Get()
@@ -135,9 +137,11 @@ func TestWithDefaultResetterOnResetCallback(t *testing.T) {
 
 		pool := xpool.NewWithDefaultResetter(
 			func() any { return sha256.New() },
-			func(called bool) {
-				onResetCalledPtr = &called
-			},
+			xpool.WithOnPutResetCallback(
+				func(called bool) {
+					onResetCalledPtr = &called
+				},
+			),
 		)
 
 		str := pool.Get()
