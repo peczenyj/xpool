@@ -1,4 +1,10 @@
+## What's Changed in v0.4.0
+* remove raw pool, update godoc
+
+**Full Changelog**: https://github.com///compare/v0.3.0...v0.4.0
+
 ## What's Changed in v0.3.0
+* bump version
 * add raw pool type, rename monadic pool
 * Merge pull request #5 from peczenyj/add-functional-options
 * small refactor
