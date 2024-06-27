@@ -22,8 +22,8 @@ type Resetter[S any] interface {
 
 // OnResetCallback type.
 // Will be called on each Reset with two parameters:
-// * called - will be true if T isa Resetter[S]
-// * onGet  - will be true if the Reset is on Get(state S), else it is on Put(object T)
+//   - called: will be true if T isa Resetter[S]
+//   - onGet: will be true if the Reset is on Get(state S), else it is on Put(object T)
 type OnResetCallback func(called, onGet bool)
 
 // New is the constructor of an *xpool.Pool.
