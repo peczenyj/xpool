@@ -1,8 +1,5 @@
-# This workflow will build a golang project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
-
+---
 name: Go
-
 on:
   push:
     branches:
@@ -10,7 +7,6 @@ on:
   pull_request:
     branches:
       - main
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -19,20 +15,20 @@ jobs:
         go: ['1.18.x', '1.19.x', '1.20.x', '1.21.x', '1.22.x', '1.23.x']
     name: Go ${{ matrix.go }} job
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: ${{ matrix.go }}
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
 
-    - name: Test
-      run: make test
+      - name: Test
+        run: make test
 
-    - name: Coverage
-      run: make coverage
+      - name: Coverage
+        run: make coverage
 
-    - name: Upload coverage reports to Codecov
-      uses: codecov/codecov-action@v5.1.2
-      env:
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5.1.2
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
