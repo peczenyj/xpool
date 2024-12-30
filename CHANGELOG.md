@@ -1,4 +1,10 @@
+## What's Changed
+* Update lint.yml
+* Bump codecov/codecov-action from 4.5.0 to 5.1.2
+* Bump github.com/stretchr/testify in the production-dependencies group
+
 ## What's Changed in v0.4.0
+* bump version
 * remove raw pool, update godoc
 
 **Full Changelog**: https://github.com///compare/v0.3.0...v0.4.0
