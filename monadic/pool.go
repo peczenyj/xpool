@@ -1,4 +1,4 @@
-// The intent of stateful is to support stateful objects.
+// The intent of monadic is to support monadic objects.
 //
 // Different than [xpool.Pool], the monadic [Pool] handle two different generic types: S and T
 //   - T is the type of the object returned from the pool
@@ -18,7 +18,7 @@
 //
 // We can use [New] to create a monadic [Pool] that manage the state of [bytes.Reader] via Reset method implicity:
 //
-//	pool := stateful.New[[]byte](func() io.Reader { // you can use any interface that you want
+//	pool := monadic.New[[]byte](func() io.Reader { // you can use any interface that you want
 //	  return bytes.NewReader(nil)
 //	}
 //
@@ -26,7 +26,7 @@
 //	defer pool.Put(br)      // implicit Reset(nil)     -- the zero value of state S, []byte on this case
 //
 //	// use byte reader here as io.Reader
-package stateful
+package monadic
 
 import (
 	"github.com/peczenyj/xpool"

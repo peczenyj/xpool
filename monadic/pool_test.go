@@ -1,4 +1,4 @@
-package stateful_test
+package monadic_test
 
 import (
 	"bytes"
@@ -12,7 +12,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/peczenyj/xpool/stateful"
+	"github.com/peczenyj/xpool/monadic"
 )
 
 func TestResetterMonadic(t *testing.T) {
@@ -20,17 +20,17 @@ func TestResetterMonadic(t *testing.T) {
 
 	testCases := []struct {
 		label string
-		pool  stateful.Pool[[]byte, *bytes.Reader]
+		pool  monadic.Pool[[]byte, *bytes.Reader]
 	}{
 		{
 			label: "monadic New + implicit default Reset",
-			pool: stateful.New[[]byte](func() *bytes.Reader {
+			pool: monadic.New[[]byte](func() *bytes.Reader {
 				return bytes.NewReader(nil)
 			}),
 		},
 		{
 			label: "monadic NewWithResetter + explicit custom Reset",
-			pool: stateful.NewWithCustomResetter(func() *bytes.Reader {
+			pool: monadic.NewWithCustomResetter(func() *bytes.Reader {
 				return bytes.NewReader(nil)
 			}, func(r *bytes.Reader, b []byte) {
 				r.Reset(b)
@@ -63,7 +63,7 @@ func TestResetterMonadic(t *testing.T) {
 }
 
 func ExampleNew() {
-	var pool stateful.Pool[[]byte, *bytes.Reader] = stateful.New(func() *bytes.Reader {
+	var pool monadic.Pool[[]byte, *bytes.Reader] = monadic.New(func() *bytes.Reader {
 		return bytes.NewReader(nil)
 	})
 
@@ -75,12 +75,12 @@ func ExampleNew() {
 }
 
 func ExampleNewWithCustomResetter() {
-	poolWriter := stateful.New(func() *flate.Writer {
+	poolWriter := monadic.New(func() *flate.Writer {
 		zw, _ := flate.NewWriter(nil, flate.DefaultCompression)
 		return zw
 	})
 
-	poolReader := stateful.NewWithCustomResetter(func() io.ReadCloser {
+	poolReader := monadic.NewWithCustomResetter(func() io.ReadCloser {
 		return flate.NewReader(nil)
 	}, func(reader io.ReadCloser, state io.Reader) {
 		reseter, _ := reader.(flate.Resetter)
