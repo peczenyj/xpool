@@ -14,7 +14,7 @@
 //   - [NewWithResetter] verify if the type T is a [Resetter] and call Reset() method.
 //   - [NewWithCustomResetter] allow add a generic callback func(T) to perform some more complex operations, if needed.
 //
-// Another alternative is to use https://github.com/peczenyj/xpool/monadicpool subpackage package.
+// Another alternative is to use https://github.com/peczenyj/xpool/stateful subpackage package.
 package xpool
 
 import "sync"
@@ -55,12 +55,12 @@ func New[T any](
 // Be careful, the custom resetter must be thread safe.
 func NewWithCustomResetter[T any](
 	ctor func() T,
-	resetter func(T),
+	onPutResetter func(T),
 ) Pool[T] {
 	return &simplePool[T]{
-		pool:     new(sync.Pool),
-		ctor:     ctor,
-		resetter: resetter,
+		pool:          new(sync.Pool),
+		ctor:          ctor,
+		onPutResetter: onPutResetter,
 	}
 }
 
@@ -75,9 +75,9 @@ func NewWithResetter[T Resetter](
 }
 
 type simplePool[T any] struct {
-	pool     Pool[any]
-	ctor     func() T
-	resetter func(T)
+	pool          Pool[any]
+	ctor          func() T
+	onPutResetter func(T)
 }
 
 func (p *simplePool[T]) Get() T {
@@ -90,8 +90,8 @@ func (p *simplePool[T]) Get() T {
 }
 
 func (p *simplePool[T]) Put(object T) {
-	if p.resetter != nil {
-		p.resetter(object)
+	if p.onPutResetter != nil {
+		p.onPutResetter(object)
 	}
 
 	p.pool.Put(object)

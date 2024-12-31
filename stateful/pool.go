@@ -84,12 +84,16 @@ func NewWithCustomResetter[S, T any](
 	return newWithResetters[S, T](
 		ctor,
 		customResetter,
-		func(object T) {
-			var zero S
-
-			customResetter(object, zero)
-		},
+		wrapResetToZeroValue(customResetter),
 	)
+}
+
+func wrapResetToZeroValue[S, T any](customResetter func(object T, state S)) func(object T) {
+	return func(object T) {
+		var zero S
+
+		customResetter(object, zero)
+	}
 }
 
 func newWithResetters[S, T any](
@@ -100,20 +104,20 @@ func newWithResetters[S, T any](
 	pool := xpool.NewWithCustomResetter[T](ctor, onPutResetter)
 
 	return &resettableMonadicPool[S, T]{
-		pool:     pool,
-		resetter: onGetResetter,
+		pool:          pool,
+		onGetResetter: onGetResetter,
 	}
 }
 
 type resettableMonadicPool[S, T any] struct {
-	pool     xpool.Pool[T]
-	resetter func(object T, state S)
+	pool          xpool.Pool[T]
+	onGetResetter func(object T, state S)
 }
 
 func (p *resettableMonadicPool[S, T]) Get(state S) T {
 	object := p.pool.Get()
 
-	p.resetter(object, state)
+	p.onGetResetter(object, state)
 
 	return object
 }

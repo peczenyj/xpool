@@ -32,7 +32,7 @@ We offer two constructors:
     })
 
     // the monadic pool will try to call the specific resetter callback.
-    pool:= stateful.NewWithResetter(func() *bytes.Reader {
+    pool:= stateful.NewWithCustomResetter(func() *bytes.Reader {
         return bytes.NewReader(nil)
     }, func(r *bytes.Reader, b []byte) {
         r.Reset(b)
@@ -45,11 +45,10 @@ using the second constructor, you can build more complex resetters, like:
 
 ```go
     // can infer types from resetter
-    poolReader := stateful.NewWithResetter(func() io.ReadCloser {
+    poolReader := stateful.NewWithCustomResetter(func() io.ReadCloser {
         return flate.NewReader(nil)
     }, func(object io.ReadCloser, state io.Reader) {
-        if resetter, ok := any(object).(flate.Resetter); ok {
-            _ = resetter.Reset(state, nil)
-        }
+        reseter, _ := reader.(flate.Resetter)
+		_ = reseter.Reset(state, nil)
     })
 ```
