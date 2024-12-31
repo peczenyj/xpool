@@ -1,8 +1,8 @@
-# xpool/monadicpool
+# xpool/monadic
 
 ## Definition
 
-The intent of this package is to support stateful objects in the [xpool](http://pkg.go.dev/github.com/peczenyj/xpool). By default is uses a `Resetter[S any]` monadic interface `Reset(state S)`.
+The intent of this package is to support monadic objects in the [xpool](http://pkg.go.dev/github.com/peczenyj/xpool). By default is uses a `Resetter[S any]` monadic interface `Reset(state S)`.
 
 We define a different Pool interface, where we set a new state `S` on the object when we get it from the pool, and we reset the state by setting a zero value of state `S` before put it back to the object pool.
 
@@ -27,12 +27,12 @@ We offer two constructors:
     // besides the log, both calls are equivalent
 
     // the monadic pool will try to call `Reset([]byte)` method by default.
-    pool:= monadicpool.New[[]byte](func() *bytes.Reader {
+    pool:= monadic.New[[]byte](func() *bytes.Reader {
         return bytes.NewReader(nil)
     })
 
     // the monadic pool will try to call the specific resetter callback.
-    pool:= monadicpool.NewWithResetter(func() *bytes.Reader {
+    pool:= monadic.NewWithCustomResetter(func() *bytes.Reader {
         return bytes.NewReader(nil)
     }, func(r *bytes.Reader, b []byte) {
         r.Reset(b)
@@ -45,11 +45,10 @@ using the second constructor, you can build more complex resetters, like:
 
 ```go
     // can infer types from resetter
-    poolReader := monadicpool.NewWithResetter(func() io.ReadCloser {
+    poolReader := monadic.NewWithCustomResetter(func() io.ReadCloser {
         return flate.NewReader(nil)
     }, func(object io.ReadCloser, state io.Reader) {
-        if resetter, ok := any(object).(flate.Resetter); ok {
-            _ = resetter.Reset(state, nil)
-        }
+        reseter, _ := reader.(flate.Resetter)
+		_ = reseter.Reset(state, nil)
     })
 ```
