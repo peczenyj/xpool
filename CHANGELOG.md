@@ -1,15 +1,18 @@
-## What's Changed
-* keep name monadic to avoid breaking changes
-* add missing changes
-* small fixes
-* rename monadicpool to xpool/stateful, simplify xpool
+## What's Changed in v0.5.0
+* Improve xpool resetters and constructors
 * fix yaml lint issues
 * enable tests with go 1.23.x
+
+**Full Changelog**: https://github.com///compare/v0.4.1...v0.5.0
+
+## What's Changed in v0.4.1
 * force version to v0.4.1
 * update cliff configuration
 * Update lint.yml
 * Bump codecov/codecov-action from 4.5.0 to 5.1.2
 * Bump github.com/stretchr/testify in the production-dependencies group
+
+**Full Changelog**: https://github.com///compare/v0.4.0...v0.4.1
 
 ## What's Changed in v0.4.0
 * bump version
