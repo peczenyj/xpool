@@ -1,6 +1,8 @@
 ## What's Changed
+* keep name monadic to avoid breaking changes
+* add missing changes
 * small fixes
-* rename monadicpool to xpool/monadic, simplify xpool
+* rename monadicpool to xpool/stateful, simplify xpool
 * fix yaml lint issues
 * enable tests with go 1.23.x
 * force version to v0.4.1
