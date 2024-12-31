@@ -72,13 +72,13 @@ func TestWithDefaultResetter(t *testing.T) {
 	}{
 		{
 			label: "NewWithResetter + explicit call to Reset()",
-			pool: xpool.NewWithResetter(sha256.New, func(h hash.Hash) {
+			pool: xpool.NewWithCustomResetter(sha256.New, func(h hash.Hash) {
 				h.Reset()
 			}),
 		},
 		{
 			label: "test NewWithDefaultResetter + implicit call to Reset",
-			pool:  xpool.NewWithDefaultResetter(sha256.New),
+			pool:  xpool.NewWithResetter(sha256.New),
 		},
 	}
 
@@ -109,46 +109,15 @@ func TestWithDefaultResetter(t *testing.T) {
 func TestWithDefaultResetterOnResetCallback(t *testing.T) {
 	t.Parallel()
 
-	t.Run("negative case", func(t *testing.T) {
-		t.Parallel()
-
-		var onResetCalledPtr *bool
-
-		pool := xpool.NewWithDefaultResetter(
-			func() string { return "" },
-			xpool.WithOnPutResetCallback(
-				func(called bool) {
-					onResetCalledPtr = &called
-				},
-			),
-		)
-
-		str := pool.Get()
-		pool.Put(str)
-
-		require.NotNil(t, onResetCalledPtr)
-		assert.False(t, *onResetCalledPtr, "should not call reset on a string")
-	})
-
 	t.Run("positive case", func(t *testing.T) {
 		t.Parallel()
 
-		var onResetCalledPtr *bool
-
-		pool := xpool.NewWithDefaultResetter(
-			func() any { return sha256.New() },
-			xpool.WithOnPutResetCallback(
-				func(called bool) {
-					onResetCalledPtr = &called
-				},
-			),
+		pool := xpool.NewWithResetter(
+			func() hash.Hash { return sha256.New() },
 		)
 
 		str := pool.Get()
 		pool.Put(str)
-
-		require.NotNil(t, onResetCalledPtr)
-		assert.True(t, *onResetCalledPtr, "should call reset on a any/hash.Hash")
 	})
 }
 
@@ -170,9 +139,9 @@ func ExampleNew() {
 	// example
 }
 
-func ExampleNewWithResetter() {
+func ExampleNewWithCustomResetter() {
 	// pool can infer T from constructor
-	var pool xpool.Pool[hash.Hash] = xpool.NewWithResetter(sha256.New,
+	var pool xpool.Pool[hash.Hash] = xpool.NewWithCustomResetter(sha256.New,
 		func(h hash.Hash) {
 			h.Reset()
 			fmt.Println("hash resetted with success")
@@ -191,9 +160,9 @@ func ExampleNewWithResetter() {
 	// hash resetted with success
 }
 
-func ExampleNewWithDefaultResetter() {
+func ExampleNewWithResetter() {
 	// pool can infer T from constructor
-	var pool xpool.Pool[hash.Hash] = xpool.NewWithDefaultResetter(sha256.New)
+	var pool xpool.Pool[hash.Hash] = xpool.NewWithResetter(sha256.New)
 
 	var hasher hash.Hash = pool.Get() // get a new hash.Hash interface
 	defer pool.Put(hasher)            // reset it before put back to sync pool.

@@ -11,8 +11,8 @@
 //
 // For stateful objects, when we need to reset the object to an initial state before put it back to the pool,
 // there are two alternative constructors:
-//   - [NewWithDefaultResetter] verify if the type T is a [Resetter] and call Reset() method.
-//   - [NewWithResetter] allow add a generic callback func(T) to perform some more complex operations, if needed.
+//   - [NewWithResetter] verify if the type T is a [Resetter] and call Reset() method.
+//   - [NewWithCustomResetter] allow add a generic callback func(T) to perform some more complex operations, if needed.
 //
 // Another alternative is to use https://github.com/peczenyj/xpool/monadicpool subpackage package.
 package xpool
@@ -42,37 +42,18 @@ type Resetter interface {
 	Reset()
 }
 
-// OnResetCallback type.
-// Will be called with a true value if the value T isa [Resetter] and was called with success.
-type OnResetCallback func(called bool)
-
-type pollConfig struct {
-	onPutResets []OnResetCallback
-}
-
-// Option type.
-type Option func(*pollConfig)
-
-// WithOnPutResetCallback is a functional option.
-// Includes one or more callbacks to be executed on object reset on Put method.
-func WithOnPutResetCallback(onPutResets ...OnResetCallback) Option {
-	return func(o *pollConfig) {
-		o.onPutResets = append(o.onPutResets, onPutResets...)
-	}
-}
-
 // New is the constructor of an [Pool] for a given generic type T.
 // Receives the constructor of the type T.
 func New[T any](
 	ctor func() T,
 ) Pool[T] {
-	return NewWithResetter[T](ctor, nil)
+	return NewWithCustomResetter[T](ctor, nil)
 }
 
 // NewWithDefaultResetter is an alternative constructor of an [Pool] for a given generic type T.
 // We can specify a special resetter, to be called before return the object from the pool.
 // Be careful, the custom resetter must be thread safe.
-func NewWithResetter[T any](
+func NewWithCustomResetter[T any](
 	ctor func() T,
 	resetter func(T),
 ) Pool[T] {
@@ -83,27 +64,13 @@ func NewWithResetter[T any](
 	}
 }
 
-// NewWithDefaultResetter is an alternative constructor of an [Pool] for a given generic type T.
-// If T is a [Resetter], before put the object back to object pool we will call Reset().
-func NewWithDefaultResetter[T any](
+// NewWithResetter is an alternative constructor of an [Pool] for a given generic type T.
+// T must be a [Resetter], before put the object back to object pool we will call Reset().
+func NewWithResetter[T Resetter](
 	ctor func() T,
-	opts ...Option,
 ) Pool[T] {
-	var c pollConfig
-
-	for _, opt := range opts {
-		opt(&c)
-	}
-
-	return NewWithResetter(ctor, func(object T) {
-		defaultResetter, ok := any(object).(Resetter)
-		if ok {
-			defaultResetter.Reset()
-		}
-
-		for _, onReset := range c.onPutResets {
-			onReset(ok)
-		}
+	return NewWithCustomResetter(ctor, func(object T) {
+		object.Reset()
 	})
 }
 
