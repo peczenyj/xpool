@@ -63,7 +63,7 @@ func TestResetterMonadic(t *testing.T) {
 }
 
 func ExampleNew() {
-	var pool monadic.Pool[[]byte, *bytes.Reader] = monadic.New(func() *bytes.Reader {
+	var pool monadic.Pool[[]byte, *bytes.Reader] = monadic.New[[]byte, *bytes.Reader](func() *bytes.Reader {
 		return bytes.NewReader(nil)
 	})
 
@@ -75,12 +75,12 @@ func ExampleNew() {
 }
 
 func ExampleNewWithCustomResetter() {
-	poolWriter := monadic.New(func() *flate.Writer {
+	poolWriter := monadic.New[io.Writer, *flate.Writer](func() *flate.Writer {
 		zw, _ := flate.NewWriter(nil, flate.DefaultCompression)
 		return zw
 	})
 
-	poolReader := monadic.NewWithCustomResetter(func() io.ReadCloser {
+	poolReader := monadic.NewWithCustomResetter[io.Reader, io.ReadCloser](func() io.ReadCloser {
 		return flate.NewReader(nil)
 	}, func(reader io.ReadCloser, state io.Reader) {
 		reseter, _ := reader.(flate.Resetter)
