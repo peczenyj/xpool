@@ -9,12 +9,12 @@
 //	rw := pool.Get()
 //	defer pool.Put(rw)
 //
-// For stateful objects, when we need to reset the object to an initial state before put it back to the pool,
+// For monadic objects, when we need to reset the object to an initial state before put it back to the pool,
 // there are two alternative constructors:
 //   - [NewWithResetter] verify if the type T is a [Resetter] and call Reset() method.
 //   - [NewWithCustomResetter] allow add a generic callback func(T) to perform some more complex operations, if needed.
 //
-// Another alternative is to use https://github.com/peczenyj/xpool/stateful subpackage package.
+// Another alternative is to use https://github.com/peczenyj/xpool/monadic subpackage package.
 package xpool
 
 import "sync"
