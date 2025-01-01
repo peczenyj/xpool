@@ -14,6 +14,8 @@
 [![GitHub Release Date](https://img.shields.io/github/release-date/peczenyj/xpool.svg)](https://github.com/peczenyj/xpool/releases/latest)
 [![Last commit](https://img.shields.io/github/last-commit/peczenyj/xpool.svg)](https://github.com/peczenyj/xpool/commit/HEAD)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/peczenyj/xpool/blob/main/CONTRIBUTING.md#pull-request-process)
+[![Mentioned in Awesome Go](https://awesome.re/mentioned-badge-flat.svg)](https://github.com/avelino/awesome-go#utilities)
+
 
 The xpool is a user-friendly, type-safe version of [sync.Pool](https://pkg.go.dev/sync#Pool).
 
