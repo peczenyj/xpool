@@ -1,4 +1,12 @@
+## What's Changed
+* split between inner simple and resettable pools implementations
+* fix doc
+* add govulncheck
+* Update README.md
+
 ## What's Changed in v0.5.0
+* fix doc
+* bump version
 * Improve xpool resetters and constructors
 * fix yaml lint issues
 * enable tests with go 1.23.x
