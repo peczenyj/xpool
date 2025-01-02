@@ -14,6 +14,7 @@
 [![GitHub Release Date](https://img.shields.io/github/release-date/peczenyj/xpool.svg)](https://github.com/peczenyj/xpool/releases/latest)
 [![Last commit](https://img.shields.io/github/last-commit/peczenyj/xpool.svg)](https://github.com/peczenyj/xpool/commit/HEAD)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/peczenyj/xpool/blob/main/CONTRIBUTING.md#pull-request-process)
+[![Mentioned in Awesome Go](https://awesome.re/mentioned-badge-flat.svg)](https://github.com/avelino/awesome-go#utilities)
 
 The xpool is a user-friendly, type-safe version of [sync.Pool](https://pkg.go.dev/sync#Pool).
 
@@ -74,13 +75,13 @@ Object pools are perfect for that are simple to create, like the ones that have 
 There are two possible approaches:
 
 * map all possible parameters and create one object pool for combination.
-* create stateful object that can be easily created and a particular state can be set via some methods.
+* create monadic object that can be easily created and a particular state can be set via some methods.
 
 The second approach we call "Resettable Objects".
 
-## Dealing with Stateful Resettable Objects
+## Dealing with monadic Resettable Objects
 
-Object pools are perfect for stateless objects, however when dealing with stateful objects we need to be extra careful with the object state. Fortunately, we have some objects that we can easily reset the state before reuse.
+Object pools are perfect for stateless objects, however when dealing with monadic objects we need to be extra careful with the object state. Fortunately, we have some objects that we can easily reset the state before reuse.
 
 Some classes of objects like [hash.Hash](https://pkg.go.dev/hash#Hash) and [bytes.Buffer](https://pkg.go.dev/bytes#Buffer) we can call a method `Reset()` to return the object to his initial state. Others such [bytes.Reader](https://pkg.go.dev/bytes#Reader) and [gzip.Writer](https://pkg.go.dev/compress/gzip#Writer) have a special meaning for a `Reset(state S)` to be possible reuse the same object instead create a new one.
 
@@ -104,7 +105,7 @@ type Resetter[S any] interface {
 }
 ```
 
-Monadic resetters are handling by package [xpool/stateful](https://pkg.go.dev/github.com/peczenyj/xpool/stateful).
+Monadic resetters are handling by package [xpool/monadic](https://pkg.go.dev/github.com/peczenyj/xpool/monadic).
 
 Important: you may not want to expose objects with a `Reset` method, the xpool will not ensure that the type `T` is a `Resetter[S]` unless you use the `NewWithResetter` constructor.
 
@@ -125,11 +126,11 @@ Calling `Reset()` before put it back to the pool of objects, on [xpool](https://
     value := hasher.Sum(nil)
 ```
 
-Calling `Reset(v)` with some value when acquire the instance and `Reset( <zero value> )` before put it back to the pool of objects, on [xpool/stateful](https://pkg.go.dev/github.com/peczenyj/xpool/stateful) package:
+Calling `Reset(v)` with some value when acquire the instance and `Reset( <zero value> )` before put it back to the pool of objects, on [xpool/monadic](https://pkg.go.dev/github.com/peczenyj/xpool/monadic) package:
 
 ```go
     // this constructor can't infer type S, so you should be explicit!
-    var pool stateful.Pool[[]byte,*bytes.Reader] = stateful.New[[]byte](
+    var pool monadic.Pool[[]byte,*bytes.Reader] = monadic.New[[]byte](
         func() *bytes.Reader {
             return bytes.NewReader(nil)
         },
@@ -162,18 +163,18 @@ on [xpool](https://pkg.go.dev/github.com/peczenyj/xpool) package:
     pool:=  xpool.NewWithDefaultResetter(sha256.New),
 ```
 
-on [xpool/stateful](https://pkg.go.dev/github.com/peczenyj/xpool/stateful) package:
+on [xpool/monadic](https://pkg.go.dev/github.com/peczenyj/xpool/monadic) package:
 
 ```go
     // besides the log, both calls are equivalent
     
-    // the stateful pool will try to call `Reset([]byte)` method by default.
-    pool:= stateful.New[[]byte](func() *bytes.Reader {
+    // the monadic pool will try to call `Reset([]byte)` method by default.
+    pool:= monadic.New[[]byte](func() *bytes.Reader {
         return bytes.NewReader(nil)
     })
 
-    // the stateful pool will try to call the specific resetter callback.
-    pool:= stateful.NewWithCustomResetter(func() *bytes.Reader {
+    // the monadic pool will try to call the specific resetter callback.
+    pool:= monadic.NewWithCustomResetter(func() *bytes.Reader {
         return bytes.NewReader(nil)
     }, func(object *bytes.Reader, state []byte) {
         object.Reset(state)
@@ -188,7 +189,7 @@ If we can discard the error and set the second parameter a constant value like n
 
 ```go
     // can infer types from resetter
-    poolReader := stateful.NewWithCustomResetter(func() io.ReadCloser {
+    poolReader := monadic.NewWithCustomResetter(func() io.ReadCloser {
         return flate.NewReader(nil)
     }, func(object io.ReadCloser, state io.Reader) {
         if resetter, ok := any(object).(flate.Resetter); ok {
@@ -205,7 +206,7 @@ An alternative can be create an object to hold different arguments like in the e
         dict []byte
     }
     // can infer type S from resetter
-    poolReader := stateful.NewWithCustomResetter(func() io.ReadCloser {
+    poolReader := monadic.NewWithCustomResetter(func() io.ReadCloser {
         return flate.NewReader(nil)
     }, func(object io.ReadCloser, state *flateResetterArgs) {
         if resetter, ok := any(object).(flate.Resetter); ok {
@@ -218,4 +219,4 @@ Custom resetters can do more than just set the status of the object, they can be
 
 ## Important
 
-On [xpool](https://pkg.go.dev/github.com/peczenyj/xpool) the resetter is optional, while on [xpool/stateful](https://pkg.go.dev/github.com/peczenyj/xpool/stateful) this is mandatory. If you don't want to have resetters on a stateful xpool, please create a regular `xpool.Pool`.
+On [xpool](https://pkg.go.dev/github.com/peczenyj/xpool) the resetter is optional, while on [xpool/monadic](https://pkg.go.dev/github.com/peczenyj/xpool/monadic) this is mandatory. If you don't want to have resetters on a monadic xpool, please create a regular `xpool.Pool`.
