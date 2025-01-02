@@ -63,7 +63,7 @@ func TestXPoolMultipleGets(t *testing.T) {
 	assert.NotSame(t, rw1, rw2)
 }
 
-func TestWithDefaultResetter(t *testing.T) {
+func TestResetter(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
@@ -71,7 +71,7 @@ func TestWithDefaultResetter(t *testing.T) {
 		pool  xpool.Pool[hash.Hash]
 	}{
 		{
-			label: "NewWithResetter + explicit call to Reset()",
+			label: "NewWithCustomResetter + explicit call to Reset() via callback",
 			pool: xpool.NewWithCustomResetter(sha256.New, func(h hash.Hash) {
 				h.Reset()
 			}),
@@ -106,19 +106,12 @@ func TestWithDefaultResetter(t *testing.T) {
 	}
 }
 
-func TestWithDefaultResetterOnResetCallback(t *testing.T) {
+func TestNewWithCustomResetter(t *testing.T) {
 	t.Parallel()
 
-	t.Run("positive case", func(t *testing.T) {
-		t.Parallel()
-
-		pool := xpool.NewWithResetter(
-			func() hash.Hash { return sha256.New() },
-		)
-
-		str := pool.Get()
-		pool.Put(str)
-	})
+	assert.Panics(t, func() {
+		xpool.NewWithCustomResetter(sha256.New, nil)
+	}, "must panic")
 }
 
 func ExampleNew() {
