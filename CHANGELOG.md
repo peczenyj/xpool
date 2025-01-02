@@ -1,8 +1,13 @@
-## What's Changed
+## What's Changed in v0.5.1
+* fix doc
+* improve pool tests
+* update changelog
 * split between inner simple and resettable pools implementations
 * fix doc
 * add govulncheck
 * Update README.md
+
+**Full Changelog**: https://github.com///compare/v0.5.0...v0.5.1
 
 ## What's Changed in v0.5.0
 * fix doc
