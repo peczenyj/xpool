@@ -47,19 +47,26 @@ type Resetter interface {
 func New[T any](
 	ctor func() T,
 ) Pool[T] {
-	return NewWithCustomResetter[T](ctor, nil)
+	return &simplePool[T]{
+		pool: new(sync.Pool),
+		ctor: ctor,
+	}
 }
 
 // NewWithDefaultResetter is an alternative constructor of an [Pool] for a given generic type T.
 // We can specify a special resetter, to be called before return the object from the pool.
 // Be careful, the custom resetter must be thread safe.
+// Will panic if onPutResetter is nil.
 func NewWithCustomResetter[T any](
 	ctor func() T,
 	onPutResetter func(T),
 ) Pool[T] {
-	return &simplePool[T]{
-		pool:          new(sync.Pool),
-		ctor:          ctor,
+	if onPutResetter == nil {
+		panic("callback 'onPutResetter' must not be nil")
+	}
+
+	return &resettablePool[T]{
+		pool:          New(ctor),
 		onPutResetter: onPutResetter,
 	}
 }
@@ -75,9 +82,8 @@ func NewWithResetter[T Resetter](
 }
 
 type simplePool[T any] struct {
-	pool          Pool[any]
-	ctor          func() T
-	onPutResetter func(T)
+	pool Pool[any]
+	ctor func() T
 }
 
 func (p *simplePool[T]) Get() T {
@@ -90,9 +96,20 @@ func (p *simplePool[T]) Get() T {
 }
 
 func (p *simplePool[T]) Put(object T) {
-	if p.onPutResetter != nil {
-		p.onPutResetter(object)
-	}
+	p.pool.Put(object)
+}
+
+type resettablePool[T any] struct {
+	pool          Pool[T]
+	onPutResetter func(T)
+}
+
+func (p *resettablePool[T]) Get() T {
+	return p.pool.Get()
+}
+
+func (p *resettablePool[T]) Put(object T) {
+	p.onPutResetter(object)
 
 	p.pool.Put(object)
 }
