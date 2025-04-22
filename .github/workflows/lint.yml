@@ -21,7 +21,5 @@ jobs:
       - run: make info go_fix go_vet
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v7
-        with:
-          version: v1.62.2
       - name: govulncheck
         uses: golang/govulncheck-action@v1
