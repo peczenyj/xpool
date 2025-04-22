@@ -125,7 +125,7 @@ func ExampleNew() {
 
 	// your favorite usage of rw
 
-	fmt.Fprint(rw, "example")
+	_, _ = fmt.Fprint(rw, "example")
 
 	_, _ = io.Copy(os.Stdout, rw)
 	// Output:
