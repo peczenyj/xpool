@@ -45,7 +45,7 @@ func TestResetterMonadic(t *testing.T) {
 			t.Parallel()
 
 			f := func(b []byte) bool {
-				var reader *bytes.Reader = pool.Get(b)
+				reader := pool.Get(b)
 				defer pool.Put(reader)
 
 				readed, err := io.ReadAll(reader)

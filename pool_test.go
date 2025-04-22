@@ -1,3 +1,4 @@
+//nolint:staticcheck,errcheck //not needed for tests and examples.
 package xpool_test
 
 import (
@@ -125,9 +126,9 @@ func ExampleNew() {
 
 	// your favorite usage of rw
 
-	_, _ = fmt.Fprint(rw, "example")
+	fmt.Fprint(rw, "example")
 
-	_, _ = io.Copy(os.Stdout, rw)
+	io.Copy(os.Stdout, rw)
 	// Output:
 	// example
 }
