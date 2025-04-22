@@ -1,3 +1,4 @@
+//nolint:staticcheck //not needed for examples.
 package monadic_test
 
 import (
