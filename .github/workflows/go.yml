@@ -43,4 +43,5 @@ jobs:
       - name: Upload coverage reports to Codecov
         if: ${{ matrix.coverage }}
         uses: codecov/codecov-action@v5
-        token: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
