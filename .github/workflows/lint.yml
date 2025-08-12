@@ -20,6 +20,6 @@ jobs:
           go-version: stable
       - run: make info go_fix go_vet
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v7
+        uses: golangci/golangci-lint-action@v8
       - name: govulncheck
         uses: golang/govulncheck-action@v1
