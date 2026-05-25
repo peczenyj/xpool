@@ -82,7 +82,7 @@ func NewWithResetter[T Resetter](
 }
 
 type simplePool[T any] struct {
-	pool Pool[any]
+	pool *sync.Pool
 	ctor func() T
 }
 
