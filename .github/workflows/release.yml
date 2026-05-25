@@ -1,0 +1,52 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  # Required to mint the OIDC token and write the SLSA provenance attestation.
+  id-token: write
+  attestations: write
+
+jobs:
+  release:
+    name: Publish GitHub Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Build source archive and checksums
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          archive="xpool-${version}.tar.gz"
+          git archive --format=tar.gz \
+            --prefix="xpool-${version}/" \
+            -o "${archive}" "${GITHUB_REF_NAME}"
+          sha256sum "${archive}" > SHA256SUMS
+          echo "ARCHIVE=${archive}" >> "${GITHUB_ENV}"
+
+      - name: Generate SLSA build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            ${{ env.ARCHIVE }}
+            SHA256SUMS
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+          files: |
+            ${{ env.ARCHIVE }}
+            SHA256SUMS
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

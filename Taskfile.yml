@@ -1,0 +1,79 @@
+version: '3'
+
+vars:
+  # PKG_LIST defines all project packages.
+  PKG_LIST:
+    sh: go list ./... | tr '\n' ' '
+  # PKG_PATH_LIST defines the directory paths for the packages in PKG_LIST.
+  PKG_PATH_LIST:
+    sh: go list -f '{{"{{.Dir}}"}}' {{.PKG_LIST}} | tr '\n' ' '
+
+tasks:
+  default:
+    desc: "List available tasks"
+    cmds:
+      - task --list
+
+  test:
+    desc: "Run unit tests via gotestsum"
+    cmds:
+      - gotestsum -f standard-verbose -- {{.PKG_PATH_LIST}} {{.CLI_ARGS}}
+
+  test:race:
+    desc: "Run unit tests with race detector"
+    cmds:
+      - gotestsum -f standard-verbose -- -race {{.PKG_PATH_LIST}} {{.CLI_ARGS}}
+
+  test:coverage:
+    desc: "Run unit tests with race detector and coverage report"
+    cmds:
+      - gotestsum -f standard-verbose -- -race -covermode=atomic -count=1 -coverprofile=coverage.txt {{.PKG_PATH_LIST}} {{.CLI_ARGS}}
+
+  clean:
+    desc: "Remove coverage artifacts"
+    cmds:
+      - rm -f coverage.* *.out *.coverprofile profile.cov
+
+  lint:
+    desc: "Run golangci-lint"
+    cmds:
+      - golangci-lint run {{.PKG_PATH_LIST}}
+
+  lint:fix:
+    desc: "Run golangci-lint and auto-fix issues where possible"
+    cmds:
+      - golangci-lint run --fix {{.PKG_PATH_LIST}}
+
+  format:
+    desc: "Format Go code with golangci-lint's built-in formatters"
+    cmds:
+      - golangci-lint fmt {{.PKG_PATH_LIST}}
+
+  tidy:
+    desc: "Run go mod tidy"
+    cmds:
+      - go mod tidy
+
+  tidy:check:
+    desc: "Fail if go.mod/go.sum are not tidy"
+    cmds:
+      - go mod tidy
+      - git diff --exit-code go.mod go.sum
+
+  ci:
+    desc: "Full pre-push gate: mirrors the GitHub Actions checks"
+    cmds:
+      - task: tidy:check
+      - task: lint
+      - go build {{.PKG_PATH_LIST}}
+      - task: test
+
+  changelog:
+    desc: "Regenerate CHANGELOG.md from git history"
+    cmds:
+      - git cliff -o CHANGELOG.md
+
+  changelog:unreleased:
+    desc: "Preview the next release's changelog section"
+    cmds:
+      - git cliff --unreleased
