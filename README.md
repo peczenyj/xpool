@@ -216,6 +216,31 @@ An alternative can be create an object to hold different arguments like in the e
 
 Custom resetters can do more than just set the status of the object, they can be used to log, trace and extract metrics.
 
+### Fallible Resetters
+
+When the reset can fail — as with [flate.Resetter](https://pkg.go.dev/compress/flate#Resetter), whose `Reset` returns an error — you don't have to silently discard that error. Both packages provide a `NewWithFallibleResetter` constructor that takes an `error`-returning resetter and an optional error handler:
+
+```go
+    poolReader := monadic.NewWithFallibleResetter(
+        func() io.ReadCloser {
+            return flate.NewReader(nil)
+        },
+        func(object io.ReadCloser, state io.Reader) error {
+            resetter, ok := object.(flate.Resetter)
+            if !ok {
+                return nil
+            }
+
+            return resetter.Reset(state, nil)
+        },
+        func(err error, object io.ReadCloser) {
+            log.Printf("flate reset failed: %v", err)
+        },
+    )
+```
+
+Failure handling is built in: if the reset fails on `Get`, the suspect object is discarded and a fresh one is built via the constructor (best effort); if it fails on `Put`, the object is dropped instead of being returned to the pool. Either way the optional handler is invoked so you can log, trace, or close the object. Passing a `nil` handler makes both cases silent. In the niladic `xpool` package the resetter runs only on `Put`, so only the drop-on-`Put` behavior applies there.
+
 ## Important
 
 On [xpool](https://pkg.go.dev/github.com/peczenyj/xpool) the resetter is optional, while on [xpool/monadic](https://pkg.go.dev/github.com/peczenyj/xpool/monadic) this is mandatory. If you don't want to have resetters on a monadic xpool, please create a regular `xpool.Pool`.

@@ -82,6 +82,34 @@ func NewWithResetter[T Resetter](
 	})
 }
 
+// NewWithFallibleResetter is an alternative constructor of an [Pool] for a given generic type T,
+// for objects whose reset can fail (for example, a reset that returns an error).
+//
+// The resetter is called on Put, just before the object would be returned to the pool. If it
+// returns a non-nil error, the object is dropped instead of being pooled (so the next Get builds a
+// fresh one via ctor), and onError is invoked for observability. The dropped object is passed to
+// onError so it can be inspected or closed.
+//
+// onError is optional: if nil, a failed reset silently drops the object.
+// The resetter may run concurrently from multiple goroutines, so any state it shares beyond the
+// object being reset must be synchronized.
+// Will panic if resetter is nil.
+func NewWithFallibleResetter[T any](
+	ctor func() T,
+	resetter func(object T) error,
+	onError func(err error, object T),
+) Pool[T] {
+	if resetter == nil {
+		panic("callback 'resetter' must not be nil")
+	}
+
+	return &fallibleResettablePool[T]{
+		pool:     New(ctor),
+		resetter: resetter,
+		onError:  onError,
+	}
+}
+
 type simplePool[T any] struct {
 	pool *sync.Pool
 	ctor func() T
@@ -107,6 +135,28 @@ type resettablePool[T any] struct {
 
 func (p *resettablePool[T]) Get() T {
 	return p.pool.Get()
+}
+
+type fallibleResettablePool[T any] struct {
+	pool     Pool[T]
+	resetter func(object T) error
+	onError  func(err error, object T)
+}
+
+func (p *fallibleResettablePool[T]) Get() T {
+	return p.pool.Get()
+}
+
+func (p *fallibleResettablePool[T]) Put(object T) {
+	if err := p.resetter(object); err != nil {
+		if p.onError != nil {
+			p.onError(err, object)
+		}
+
+		return // drop: a failed reset must not return the object to the pool.
+	}
+
+	p.pool.Put(object)
 }
 
 func (p *resettablePool[T]) Put(object T) {

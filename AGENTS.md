@@ -27,10 +27,15 @@ needs reflection.
 - **`NewWithCustomResetter`:** takes an arbitrary `func(T)` reset callback (must
   be thread-safe; panics if nil). Useful for logging, tracing, or non-`Resetter`
   types.
+- **`NewWithFallibleResetter`:** takes a `func(T) error` reset callback plus an
+  optional `func(err error, object T)` error handler. If the reset fails on
+  `Put`, the object is dropped (not pooled) and the handler is invoked. Panics
+  if the resetter is nil.
 - **Internals:** `simplePool[T]` wraps a `*sync.Pool`, storing values as `any`
   and type-asserting on `Get` with a `ctor()` fallback when the pool is empty.
   `resettablePool[T]` decorates another `Pool[T]`, running the reset callback
-  before delegating `Put`.
+  before delegating `Put`. `fallibleResettablePool[T]` is the error-aware
+  variant.
 
 ### Monadic Package (`monadic`)
 
@@ -44,9 +49,14 @@ For objects whose reset takes a value — e.g. `bytes.Reader.Reset(b)` or
 - **`NewWithCustomResetter`:** takes a `func(object T, state S)` resetter,
   letting you adapt types whose reset signature differs (see the `flate.Resetter`
   example in `monadic/pool_test.go`).
+- **`NewWithFallibleResetter`:** takes a `func(object T, state S) error` resetter
+  plus an optional error handler. On `Get` failure the pooled object is discarded
+  and rebuilt via `ctor` (best effort); on `Put` failure the object is dropped.
+  Each failure is reported to the handler. Panics if the resetter is nil.
 - **Internals:** built on top of `xpool.NewWithCustomResetter` — the monadic pool
   supplies the on-put resetter (zero value of `S`) to the core pool and applies
-  the on-get resetter itself in `resettableMonadicPool.Get`.
+  the on-get resetter itself in `resettableMonadicPool.Get`. The fallible variant
+  (`fallibleMonadicPool[S, T]`) layers on `xpool.NewWithFallibleResetter`.
 
 Key design point: a resetter is **optional** in `xpool` but **mandatory** in
 `monadic`. If you don't want a resetter, use a plain `xpool.Pool`.
