@@ -4,6 +4,7 @@ package xpool_test
 import (
 	"bytes"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"hash"
 	"io"
@@ -112,6 +113,86 @@ func TestNewWithCustomResetter(t *testing.T) {
 
 	assert.Panics(t, func() {
 		xpool.NewWithCustomResetter(sha256.New, nil)
+	}, "must panic")
+}
+
+type box struct{ n int }
+
+var errReset = errors.New("reset failed")
+
+func TestFallibleResetterPutSuccessPoolsObject(t *testing.T) {
+	t.Parallel()
+
+	resetCalls := 0
+
+	pool := xpool.NewWithFallibleResetter(
+		func() *box { return &box{n: -1} },
+		func(b *box) error {
+			b.n = 0
+			resetCalls++
+
+			return nil
+		},
+		nil,
+	)
+
+	b := pool.Get()
+	b.n = 42
+
+	pool.Put(b) // reset succeeds, object is returned to the pool
+
+	assert.Equal(t, 1, resetCalls)
+	assert.Equal(t, 0, b.n, "object must be reset before pooling")
+
+	_ = pool.Get() // also exercises the Get delegate
+}
+
+func TestFallibleResetterPutFailureDropsAndReportsError(t *testing.T) {
+	t.Parallel()
+
+	var (
+		gotErr error
+		gotObj *box
+	)
+
+	pool := xpool.NewWithFallibleResetter(
+		func() *box { return &box{} },
+		func(*box) error { return errReset },
+		func(err error, obj *box) {
+			gotErr = err
+			gotObj = obj
+		},
+	)
+
+	b := pool.Get()
+	pool.Put(b) // reset fails: object must be dropped and reported
+
+	require.ErrorIs(t, gotErr, errReset)
+	require.Same(t, b, gotObj, "the dropped object must be passed to onError")
+
+	b2 := pool.Get()
+	require.NotSame(t, b, b2, "a dropped object must not be handed back from the pool")
+}
+
+func TestFallibleResetterNilOnErrorDoesNotPanic(t *testing.T) {
+	t.Parallel()
+
+	pool := xpool.NewWithFallibleResetter(
+		func() *box { return &box{} },
+		func(*box) error { return errReset },
+		nil,
+	)
+
+	b := pool.Get()
+
+	require.NotPanics(t, func() { pool.Put(b) })
+}
+
+func TestFallibleResetterPanicsOnNilResetter(t *testing.T) {
+	t.Parallel()
+
+	assert.Panics(t, func() {
+		xpool.NewWithFallibleResetter(func() *box { return &box{} }, nil, nil)
 	}, "must panic")
 }
 

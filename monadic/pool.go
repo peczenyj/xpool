@@ -97,6 +97,80 @@ func NewWithCustomResetter[S, T any](
 	)
 }
 
+// NewWithFallibleResetter is the constructor of a monadic [Pool] for objects whose reset can fail,
+// such as a type implementing [flate.Resetter] (whose Reset returns an error).
+//
+// The resetter is called with the supplied state on Get and with the zero value of S on Put:
+//   - If it fails on Get, the object is discarded, a fresh one is built via ctor and reset once more.
+//     onError is invoked for each failure. Get always returns an object (best effort), so a reset
+//     that keeps failing yields an object that was never successfully reset.
+//   - If it fails on Put, the object is dropped instead of being pooled, and onError is invoked.
+//
+// onError is optional: if nil, failures are handled silently. The dropped/failed object is passed
+// to onError so it can be inspected or closed.
+// The resetter may run concurrently from multiple goroutines, so any state it shares beyond the
+// object being reset must be synchronized.
+// Will panic if resetter is nil.
+func NewWithFallibleResetter[S, T any](
+	ctor func() T,
+	resetter func(object T, state S) error,
+	onError func(err error, object T),
+) Pool[S, T] {
+	if resetter == nil {
+		panic("callback 'resetter' must not be nil")
+	}
+
+	base := xpool.NewWithFallibleResetter[T](
+		ctor,
+		func(object T) error {
+			var zero S
+
+			return resetter(object, zero)
+		},
+		onError,
+	)
+
+	return &fallibleMonadicPool[S, T]{
+		pool:    base,
+		ctor:    ctor,
+		onGet:   resetter,
+		onError: onError,
+	}
+}
+
+type fallibleMonadicPool[S, T any] struct {
+	pool    xpool.Pool[T]
+	ctor    func() T
+	onGet   func(object T, state S) error
+	onError func(err error, object T)
+}
+
+func (p *fallibleMonadicPool[S, T]) Get(state S) T {
+	object := p.pool.Get()
+
+	if err := p.onGet(object, state); err != nil {
+		p.reportError(err, object)
+
+		object = p.ctor() // the pooled object is suspect; start from a fresh one.
+
+		if err := p.onGet(object, state); err != nil {
+			p.reportError(err, object)
+		}
+	}
+
+	return object
+}
+
+func (p *fallibleMonadicPool[_, T]) Put(object T) {
+	p.pool.Put(object) // the underlying pool resets with the zero value and drops on failure.
+}
+
+func (p *fallibleMonadicPool[_, T]) reportError(err error, object T) {
+	if p.onError != nil {
+		p.onError(err, object)
+	}
+}
+
 func wrapResetToZeroValue[S, T any](customResetter func(object T, state S)) func(object T) {
 	return func(object T) {
 		var zero S
