@@ -22,6 +22,15 @@ jobs:
         uses: golangci/golangci-lint-action@v7
         with:
           version: v2.12.2
+      - name: Install task
+        uses: arduino/setup-task@v2
+        with:
+          version: 3.x
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install go-consistent
+        run: go install github.com/quasilyte/go-consistent@latest
+      - name: Consistency check
+        run: task consistent
 
   test:
     name: Unit tests (Go ${{ matrix.go-version }})

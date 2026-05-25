@@ -113,7 +113,9 @@ func TestNewWithCustomResetter(t *testing.T) {
 
 	assert.Panics(t, func() {
 		xpool.NewWithCustomResetter(sha256.New, nil)
-	}, "must panic")
+	},
+		"must panic",
+	)
 }
 
 type box struct{ n int }
@@ -156,7 +158,7 @@ func TestFallibleResetterPutFailureDropsAndReportsError(t *testing.T) {
 	)
 
 	pool := xpool.NewWithFallibleResetter(
-		func() *box { return &box{} },
+		func() *box { return new(box) },
 		func(*box) error { return errReset },
 		func(err error, obj *box) {
 			gotErr = err
@@ -178,7 +180,7 @@ func TestFallibleResetterNilOnErrorDoesNotPanic(t *testing.T) {
 	t.Parallel()
 
 	pool := xpool.NewWithFallibleResetter(
-		func() *box { return &box{} },
+		func() *box { return new(box) },
 		func(*box) error { return errReset },
 		nil,
 	)
@@ -192,8 +194,10 @@ func TestFallibleResetterPanicsOnNilResetter(t *testing.T) {
 	t.Parallel()
 
 	assert.Panics(t, func() {
-		xpool.NewWithFallibleResetter(func() *box { return &box{} }, nil, nil)
-	}, "must panic")
+		xpool.NewWithFallibleResetter(func() *box { return new(box) }, nil, nil)
+	},
+		"must panic",
+	)
 }
 
 func ExampleNew() {

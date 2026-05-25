@@ -140,7 +140,7 @@ func TestFallibleMonadicNilOnErrorDoesNotPanic(t *testing.T) {
 	t.Parallel()
 
 	pool := monadic.NewWithFallibleResetter(
-		func() *box { return &box{} },
+		func() *box { return new(box) },
 		func(*box, int) error { return errReset },
 		nil,
 	)
@@ -154,7 +154,7 @@ func TestFallibleMonadicPutZeroResetFailureDrops(t *testing.T) {
 	var putErr error
 
 	pool := monadic.NewWithFallibleResetter(
-		func() *box { return &box{} },
+		func() *box { return new(box) },
 		func(b *box, state int) error {
 			if state == 0 {
 				return errReset // fail only the zero-value reset on Put
@@ -179,8 +179,10 @@ func TestFallibleMonadicPanicsOnNilResetter(t *testing.T) {
 	t.Parallel()
 
 	assert.Panics(t, func() {
-		monadic.NewWithFallibleResetter[int](func() *box { return &box{} }, nil, nil)
-	}, "must panic")
+		monadic.NewWithFallibleResetter[int](func() *box { return new(box) }, nil, nil)
+	},
+		"must panic",
+	)
 }
 
 func ExampleNewWithFallibleResetter() {

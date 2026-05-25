@@ -74,9 +74,10 @@ The project uses [Task](https://taskfile.dev/) for workflow automation. A
 | `task lint` | Executes `golangci-lint` with the project's configuration. |
 | `task lint:fix` | Runs `golangci-lint run --fix`. |
 | `task format` | Formats the codebase via `golangci-lint fmt` (`gofumpt`, `goimports`, `gci`). |
+| `task consistent` | Checks code-pattern consistency with `go-consistent`. |
 | `task tidy` | Runs `go mod tidy`. |
 | `task tidy:check` | Fails if `go.mod`/`go.sum` are not tidy. |
-| `task ci` | Full pre-push gate: `tidy:check` + `lint` + build + `test`. |
+| `task ci` | Full pre-push gate: `tidy:check` + `lint` + `consistent` + build + `test`. |
 | `task changelog` | Regenerates `CHANGELOG.md` using `git-cliff`. |
 
 ### Prerequisites
@@ -85,6 +86,7 @@ The project uses [Task](https://taskfile.dev/) for workflow automation. A
 - `task` (Taskfile runner)
 - `golangci-lint` v2 (CI pins `v2.12.2`)
 - `gotestsum` (used by the test tasks)
+- `go-consistent` (`go install github.com/quasilyte/go-consistent@latest`)
 - `git-cliff` (only for regenerating the changelog)
 
 ## Development Conventions
