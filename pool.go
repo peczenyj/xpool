@@ -53,7 +53,7 @@ func New[T any](
 	}
 }
 
-// NewWithDefaultResetter is an alternative constructor of an [Pool] for a given generic type T.
+// NewWithCustomResetter is an alternative constructor of an [Pool] for a given generic type T.
 // We can specify a special resetter, to be called before return the object from the pool.
 // Be careful, the custom resetter must be thread safe.
 // Will panic if onPutResetter is nil.

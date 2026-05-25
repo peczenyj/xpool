@@ -3,8 +3,7 @@
 [![tag](https://img.shields.io/github/tag/peczenyj/xpool.svg)](https://github.com/peczenyj/xpool/releases)
 ![Go Version](https://img.shields.io/badge/Go-%3E%3D%201.18-%23007d9c)
 [![GoDoc](https://pkg.go.dev/badge/github.com/peczenyj/xpool)](http://pkg.go.dev/github.com/peczenyj/xpool)
-[![Go](https://github.com/peczenyj/xpool/actions/workflows/go.yml/badge.svg)](https://github.com/peczenyj/xpool/actions/workflows/go.yml)
-[![Lint](https://github.com/peczenyj/xpool/actions/workflows/lint.yml/badge.svg)](https://github.com/peczenyj/xpool/actions/workflows/lint.yml)
+[![CI](https://github.com/peczenyj/xpool/actions/workflows/ci.yml/badge.svg)](https://github.com/peczenyj/xpool/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/peczenyj/xpool/graph/badge.svg?token=9y6f3vGgpr)](https://codecov.io/gh/peczenyj/xpool)
 [![Report card](https://goreportcard.com/badge/github.com/peczenyj/xpool)](https://goreportcard.com/report/github.com/peczenyj/xpool)
 [![CodeQL](https://github.com/peczenyj/xpool/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/peczenyj/xpool/actions/workflows/github-code-scanning/codeql)
@@ -160,7 +159,7 @@ on [xpool](https://pkg.go.dev/github.com/peczenyj/xpool) package:
     ),
 
     // the default resetter try to call `Reset()` method.
-    pool:=  xpool.NewWithDefaultResetter(sha256.New),
+    pool:=  xpool.NewWithResetter(sha256.New),
 ```
 
 on [xpool/monadic](https://pkg.go.dev/github.com/peczenyj/xpool/monadic) package:
@@ -220,3 +219,17 @@ Custom resetters can do more than just set the status of the object, they can be
 ## Important
 
 On [xpool](https://pkg.go.dev/github.com/peczenyj/xpool) the resetter is optional, while on [xpool/monadic](https://pkg.go.dev/github.com/peczenyj/xpool/monadic) this is mandatory. If you don't want to have resetters on a monadic xpool, please create a regular `xpool.Pool`.
+
+## Development
+
+This project uses [Task](https://taskfile.dev/) for workflow automation (a `Makefile` is provided as a thin proxy, so `make test` works too).
+
+```bash
+task test          # run unit tests via gotestsum
+task test:coverage # run tests with race detector + coverage
+task lint          # run golangci-lint
+task format        # format with gofumpt / goimports / gci
+task ci            # full pre-push gate (tidy check + lint + build + test)
+```
+
+Run `task --list` to see every available task. See [AGENTS.md](./AGENTS.md) for the architectural overview and contribution conventions.

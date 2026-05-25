@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"compress/flate"
 	"io"
-	"log"
 	"os"
 	"strings"
 	"testing"
@@ -96,11 +95,11 @@ func ExampleNewWithCustomResetter() {
 	defer poolWriter.Put(zwc)
 
 	if _, err := io.Copy(zwc, r); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	if err := zwc.Close(); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	zrc := poolReader.Get(&b)

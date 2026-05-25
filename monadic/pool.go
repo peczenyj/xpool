@@ -16,7 +16,7 @@
 //	br.Reset(payload)
 //	// use the byte reader here
 //
-// We can use [New] to create a monadic [Pool] that manage the state of [bytes.Reader] via Reset method implicity:
+// We can use [New] to create a monadic [Pool] that manage the state of [bytes.Reader] via Reset method implicitly:
 //
 //	pool := monadic.New[[]byte](func() io.Reader { // you can use any interface that you want
 //	  return bytes.NewReader(nil)

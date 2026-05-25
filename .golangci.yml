@@ -1,0 +1,40 @@
+---
+version: "2"
+
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+
+linters:
+  default: standard
+  enable:
+    - gocritic
+    - revive
+    - misspell
+    - gocyclo
+    - bodyclose
+    - errorlint
+    - prealloc
+  settings:
+    gocyclo:
+      min-complexity: 15
+    revive:
+      severity: warning
+  exclusions:
+    rules:
+      - path: _test\.go
+        linters:
+          - gocyclo
+          - errcheck
+
+formatters:
+  enable:
+    - gofumpt
+    - goimports
+    - gci
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(github.com/peczenyj/xpool)
