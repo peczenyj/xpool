@@ -33,9 +33,7 @@
 //	// use byte reader here as io.Reader
 package monadic
 
-import (
-	"github.com/peczenyj/xpool"
-)
+import "github.com/peczenyj/xpool"
 
 // Pool monadic is a type-safe object pool interface.
 // This interface is parameterized on two generic types:
