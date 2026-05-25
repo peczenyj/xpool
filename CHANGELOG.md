@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [unreleased]
+## [0.5.2] - 2026-05-25
 
 ### Bug Fixes
 
@@ -10,6 +10,18 @@ All notable changes to this project will be documented in this file.
 - Fix lint issue errcheck
 - Fix lint issues
 - Fix lint issues, part 2
+
+### Documentation
+
+- Correct godoc errors and fix public-facing typos (#32)
+
+### Miscellaneous Tasks
+
+- Adopt Task-based tooling and modernize CI (#31)
+
+### Performance
+
+- Add benchmarks and drop an interface hop in simplePool (#33)
 
 ## [0.5.1] - 2025-01-02
 
