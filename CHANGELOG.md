@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.0] - 2026-05-25
+
+### Features
+
+- Add NewWithFallibleResetter for error-returning resets (#35)
+
 ## [0.5.2] - 2026-05-25
 
 ### Bug Fixes
@@ -18,6 +24,7 @@ All notable changes to this project will be documented in this file.
 ### Miscellaneous Tasks
 
 - Adopt Task-based tooling and modernize CI (#31)
+- *(release)* Prepare v0.5.2
 
 ### Performance
 
