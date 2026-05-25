@@ -1,8 +1,13 @@
-// The intent of monadic is to support monadic objects.
+// Package monadic supports objects whose state is set when they leave the pool
+// and cleared when they return to it.
 //
-// Different than [xpool.Pool], the monadic [Pool] handle two different generic types: S and T
+// Different than [xpool.Pool], the monadic [Pool] handles two different generic types: S and T
 //   - T is the type of the object returned from the pool
-//   - S is the state, where we set before return an object, and reset it back to zero value of S when put back to the pool.
+//   - S is the state, set before an object is returned, and reset back to the zero value of S when put back to the pool.
+//
+// Note that a pooled object is reset twice per cycle: with the supplied state on Get, and with the
+// zero value of S on Put. The Put-side reset is what keeps idle objects from pinning your state in
+// memory (for example, a [bytes.Reader] holding a large slice), so it is intentional rather than redundant.
 //
 // In other words, instead having to do:
 //
@@ -35,14 +40,14 @@ import (
 // Pool monadic is a type-safe object pool interface.
 // This interface is parameterized on two generic types:
 //   - T is reserved for the type of the object that will be stored on the pool.
-//   - S is reserved for the status of the object to be setted before return the object from the pool.
+//   - S is reserved for the state of the object to be set before the object is returned from the pool.
 type Pool[S, T any] interface {
 	// Get fetch one item from object pool. If needed, will create another object.
 	// The state S will be used in the resetter.
 	Get(state S) T
 
-	// Put return the object to the pull.
-	// A zero value of T will be used in the resetter.
+	// Put returns the object to the pool.
+	// A zero value of S will be used in the resetter.
 	Put(object T)
 }
 
@@ -56,6 +61,9 @@ type Resetter[S any] interface {
 // It sets a trivial resetter, T must be a [Resetter]
 // will call Reset(state S) before return the object on Get(state S)
 // will call Reset(zero value of S) before push back to the pool.
+//
+// A monadic pool always resets; New is the [xpool.NewWithResetter] equivalent for monadic objects.
+// Use [NewWithCustomResetter] when T does not implement [Resetter] or the reset needs extra logic.
 func New[S any, T Resetter[S]](
 	ctor func() T,
 ) Pool[S, T] {
@@ -74,9 +82,10 @@ func New[S any, T Resetter[S]](
 
 // NewWithCustomResetter is the constructor of an [Pool] for a given set of generic types S and T.
 // Receives the constructor of the type T as a callback.
-// We can specify a special resetter, to be called with a zero value of S before
-// return the object from the pool.
-// Be careful, the custom resetter must be thread safe.
+// We can specify a special resetter: it is called with the supplied state on Get (before the object
+// is returned to the caller) and with the zero value of S on Put (before the object is returned to the pool).
+// The resetter may run concurrently from multiple goroutines, so any state it shares beyond the
+// object being reset must be synchronized.
 func NewWithCustomResetter[S, T any](
 	ctor func() T,
 	customResetter func(object T, state S),
