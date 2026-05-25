@@ -1,4 +1,4 @@
-// xpool is a type safe object pool build on top of [sync.Pool]
+// Package xpool is a type-safe object pool built on top of [sync.Pool].
 //
 // It is easy to use, just give a function that can create an object of a given type T
 // as argument of [New] and it will return an implementation of [Pool] interface:
@@ -31,8 +31,8 @@ type Pool[T any] interface {
 	// If needed, will create another object.
 	Get() T
 
-	// Put return the object to the pull.
-	// It may reset the object before put it back to sync pool.
+	// Put returns the object to the pool.
+	// It may reset the object before putting it back to the sync pool.
 	Put(object T)
 }
 
@@ -54,8 +54,9 @@ func New[T any](
 }
 
 // NewWithCustomResetter is an alternative constructor of an [Pool] for a given generic type T.
-// We can specify a special resetter, to be called before return the object from the pool.
-// Be careful, the custom resetter must be thread safe.
+// We can specify a special resetter, called on Put just before the object is returned to the pool.
+// The resetter may run concurrently from multiple goroutines, so any state it shares beyond the
+// object being reset must be synchronized.
 // Will panic if onPutResetter is nil.
 func NewWithCustomResetter[T any](
 	ctor func() T,
