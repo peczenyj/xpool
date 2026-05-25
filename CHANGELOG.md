@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Changed
+
+- Adopt the shared Keep a Changelog git-cliff configuration
+
 ## [0.6.0] - 2026-05-25
 
 ### Features
