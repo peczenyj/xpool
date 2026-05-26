@@ -31,7 +31,7 @@ jobs:
           echo "ARCHIVE=${archive}" >> "${GITHUB_ENV}"
 
       - name: Generate SLSA build provenance
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: |
             ${{ env.ARCHIVE }}
