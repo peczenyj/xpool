@@ -70,6 +70,6 @@ jobs:
         run: task test:coverage
       - name: Upload coverage reports to Codecov
         if: matrix.go-version == 'stable'
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v7
         with:
           slug: peczenyj/xpool
