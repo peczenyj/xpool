@@ -23,7 +23,7 @@ jobs:
         with:
           version: v2.12.2
       - name: Install task
-        uses: arduino/setup-task@v2
+        uses: arduino/setup-task@v3
         with:
           version: 3.x
           repo-token: ${{ secrets.GITHUB_TOKEN }}
@@ -62,7 +62,7 @@ jobs:
           curl -sSfL "https://github.com/gotestyourself/gotestsum/releases/download/v${version}/gotestsum_${version}_linux_amd64.tar.gz" \
             | sudo tar -xz -C /usr/local/bin gotestsum
       - name: Install task
-        uses: arduino/setup-task@v2
+        uses: arduino/setup-task@v3
         with:
           version: 3.x
           repo-token: ${{ secrets.GITHUB_TOKEN }}
